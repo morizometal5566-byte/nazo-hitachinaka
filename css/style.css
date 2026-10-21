@@ -399,8 +399,8 @@ body.reduce *,body.reduce *::before,body.reduce *::after{animation:none!importan
 .neg-svg{width:100%;height:auto;display:block}
 .neg-g{transition:transform .3s ease}
 .reduce .neg-g{transition:none}
-.neg .cb{font-family:var(--sans);font-size:22px;font-weight:700;fill:#111;stroke:#fff;stroke-width:4px;paint-order:stroke;display:none}
-.neg.cb-on .cb{display:inline}
+.cbl{font-family:var(--sans);font-size:18px;font-weight:700;fill:#111;stroke:#fff;stroke-width:4px;paint-order:stroke;display:none}
+body.cb .cbl{display:inline}
 .neg-desc{color:var(--paper-ink)}
 
 /* 森山の言葉・エピローグ */

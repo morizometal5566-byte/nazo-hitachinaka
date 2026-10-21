@@ -17,7 +17,8 @@
   }
   function ovSnapped(fig, o) {
     const sn = J(fig, 'snap');
-    return Math.abs(o.x - sn.x) <= sn.tol && Math.abs(o.y - sn.y) <= sn.tol && ((o.r % 360) + 360) % 360 === sn.r && !!o.f === !!sn.f;
+    const rr = ((o.r % 360) + 360) % 360;
+    return Math.abs(o.x - sn.x) <= sn.tol && Math.abs(o.y - sn.y) <= sn.tol && (sn.rs ? sn.rs.includes(rr) : rr === sn.r) && !!o.f === !!sn.f;
   }
   function ovApply(fig) {
     const o = ovState(fig);
@@ -160,12 +161,11 @@
     const n = negState();
     const g = $('.neg-g', fig);
     g.setAttribute('transform', `rotate(${(n.r % 4) * 90} 300 200)${n.f ? ' translate(600 0) scale(-1 1)' : ''}`);
-    $('.neg-frame', fig).style.filter = `invert(${(1 - n.d / 100).toFixed(2)})`;
+    $('.neg-frame', fig).style.filter = `grayscale(1) invert(${(1 - n.d / 100).toFixed(2)})`; // 白黒フィルム：色は出ない
     $('input[type=range]', fig).value = n.d; $('.dev-val', fig).textContent = n.d;
     const ok = negOk(n);
     fig.classList.toggle('snapped', ok);
-    fig.classList.toggle('cb-on', ok && ctx.cb());
-    $('.ov-ok', fig).hidden = !ok;
+        $('.ov-ok', fig).hidden = !ok;
     const desc = $('.neg-desc', fig); if (desc) desc.hidden = !ok;
     const a = []; if (n.r % 4) a.push(`${(n.r % 4) * 90}°`); if (n.f) a.push('裏返し'); a.push(n.d < 15 ? 'ネガ' : n.d < 85 ? '現像中' : 'ポジ');
     $('.neg-state', fig).textContent = 'いま：' + a.join('・') + (ok ? '　✓' : '');

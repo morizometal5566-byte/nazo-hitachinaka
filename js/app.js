@@ -3,8 +3,8 @@
 (function () {
   'use strict';
   const { DOCS, CHAT, STAGES } = window.CASE;
-  const KEY = 'negative19.full.v1';
-  const N = window.N19, ANS = window.ANS || { H3: {} };
+  const KEY = 'negative19.v6';
+  const N = window.N19, ANS = window.ANS || {};
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const mqDesk = window.matchMedia('(min-width: 900px)');
@@ -14,7 +14,7 @@
   /* ================= 保存 ================= */
   function fresh() {
     return {
-      v: 5, phase: 'title', stage: 0, step: 0, solved: {}, chat: [], read: [],
+      v: 6, phase: 'title', stage: 0, step: 0, solved: {}, chat: [], read: [],
       fold: {}, ph: {}, ov: {}, dev: {}, fr: {}, trace: {}, neg: null, flags: {}, choice: null,
       wrong: {}, hints: {}, drafts: {}, memo: '', pin: null, peek: false,
       settings: { font: 'm', contrast: false, motion: false, cb: false },
@@ -28,6 +28,7 @@
       if (!raw) return null;
       const d = JSON.parse(raw);
       const f = fresh();
+      if (d.v !== 6) return null;
       return Object.assign(f, d, { settings: Object.assign(f.settings, d.settings || {}), view: Object.assign(f.view, d.view || {}) });
     } catch (e) { return null; }
   }
@@ -69,7 +70,7 @@
       (!r.test || (() => { try { return r.test(c); } catch (e) { return false; } })()));
     return { ok: false, bad, msg: rule ? rule.msg : (p.fb || GENERIC), flag: rule && rule.flag, c };
   }
-  const hintsOf = (p) => { const h3 = ANS.H3[p.id]; let t = ''; try { t = h3 ? N.unveil(h3) : ''; } catch (e) {} return [...p.hint, '答え：' + t]; };
+  const hintsOf = (p) => p.hint; // ヒントは「考える向き」だけ。答えを見せる段はない
 
   /* ================= 便利なもの ================= */
   const stageObj = () => STAGES[Math.min(S.stage, STAGES.length - 1)];
@@ -195,6 +196,7 @@
   /* ================= いまの謎 ================= */
   function stepsHTML() {
     const st = stageObj();
+    if (st.puzzles.length < 2) return '';
     return `<ol class="steps" aria-label="このステージの謎">${st.puzzles.map((p, i) => {
       const done = !!S.solved[p.id], act = !isClear() && i === S.step;
       return `<li class="${done ? 'done' : act ? 'act' : 'lock'}" ${act ? 'aria-current="step"' : ''}><span class="st-mark">${done ? '✓' : p.step}</span><span class="st-name">${esc(p.name)}</span></li>`;
@@ -243,7 +245,7 @@
       return;
     }
     const p = curPuzzle();
-    const kindLabel = { small: '小謎', mid: p.id === '0M' ? '中謎（ロック）' : p.id === '7M' ? '大謎（全部そろえて判定）' : '中謎（全部そろえて判定）' }[p.kind];
+    const kindLabel = p.id === '0M' ? 'ロック' : p.final ? '大謎　答えは1回でまとめて判定' : `${stageObj().label.split(' ')[0]} の謎　答えは1回でまとめて判定`;
     const dr = S.drafts[p.id] || {};
     const fb = S.lastFb && S.lastFb.id === p.id ? S.lastFb : null;
     const w = S.wrong[p.id] || 0;
@@ -251,7 +253,7 @@
     box.innerHTML = `${stepsHTML()}${factsHTML()}
       <div class="pz-card${p.kind === 'mid' ? ' mid' : ''}">
         <p class="pz-kind">${kindLabel}</p>
-        <h2 id="pz-name" class="pz-name">${esc(p.step)} ${esc(p.name)}</h2>
+        <h2 id="pz-name" class="pz-name">${esc(p.name)}</h2>
         <p class="pz-q">${p.kind === 'mid' ? sentenceWithBlanks(p) : esc(p.q)}</p>
         ${openBtn}
         <form class="pz-form" id="pz-form" novalidate>
@@ -312,7 +314,6 @@
       S.wrong[p.id] = (S.wrong[p.id] || 0) + 1;
       if (r.flag) S.flags[r.flag] = true;
       let msg = r.msg;
-      if (p.fields.length > 1 && S.wrong[p.id] >= 3) msg = `間違いは${r.bad}つ。` + msg.replace(GENERIC, '');
       S.lastFb = { id: p.id, msg, cls: 'ng' }; save();
       renderPuzzle();
       const card = $('.pz-card'); if (card && !reduced()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); }
@@ -605,19 +606,20 @@
       $('#set-contrast').checked = S.settings.contrast; $('#set-motion').checked = S.settings.motion; $('#set-cb').checked = !!S.settings.cb;
     }
   }
-  const HINT_ASK = ['ヒント1を見ますか？（どこを見ればいいかが分かります）', 'ヒント2を見ますか？（何をすればいいかが分かります）', 'ヒント3は「答え」です。見ますか？'];
+  const HINT_ASK = ['ヒント1を見ますか？（どの資料を見ればいいか）', 'ヒント2を見ますか？（どこに目をつければいいか）', 'ヒント3を見ますか？（考え方の向き。答えは出ません）'];
   function renderHints() {
     const p = curPuzzle();
     const box = $('#hint-box');
     if (!p) { box.innerHTML = '<p class="muted">いまは解く謎がありません。</p>'; return; }
     const n = S.hints[p.id] || 0;
     const HS = hintsOf(p);
-    box.innerHTML = `<p class="hint-for">いまの謎：<b>${esc(p.step)} ${esc(p.name)}</b></p>
-      <ol class="hints">${HS.map((h, i) => i < n ? `<li class="open"><span class="h-lv">${i === 2 ? '答え' : 'ヒント' + (i + 1)}</span>${esc(h)}</li>` : i === n ? `<li><button type="button" class="btn ${i === 2 ? 'danger' : 'ghost'} sm" id="btn-hint-next">${i === 2 ? '答えを見る' : `ヒント${i + 1}を見る`}</button></li>` : `<li class="locked"><span class="h-lv">${i === 2 ? '答え' : 'ヒント' + (i + 1)}</span>ヒント${i}を見ると開けます</li>`).join('')}</ol>
+    box.innerHTML = `<p class="hint-for">いまの謎：<b>${esc(p.name)}</b></p>
+      <ol class="hints">${HS.map((h, i) => i < n ? `<li class="open"><span class="h-lv">ヒント${i + 1}</span>${esc(h)}</li>` : i === n ? `<li><button type="button" class="btn ghost sm" id="btn-hint-next">ヒント${i + 1}を見る</button></li>` : `<li class="locked"><span class="h-lv">ヒント${i + 1}</span>ヒント${i}を見ると開けます</li>`).join('')}</ol>
+      <p class="muted sm">ヒントは考える向きだけ。答えは出ません。</p>
       <p class="muted sm">ヒントは自分で開くまで見えません。見ても減点はありません。</p>`;
     const b = $('#btn-hint-next');
     if (b) b.onclick = async () => {
-      const ok = await confirmDlg(HINT_ASK[n], n === 2 ? '答えを見る' : '見る');
+      const ok = await confirmDlg(HINT_ASK[n], '見る');
       if (!ok) { $('#btn-hint-next') && $('#btn-hint-next').focus(); return; }
       S.hints[p.id] = n + 1; save(); renderHints(); renderBottom();
       const opened = $$('#hint-box li.open'); if (opened.length) { opened[opened.length - 1].setAttribute('tabindex', '-1'); opened[opened.length - 1].focus(); }

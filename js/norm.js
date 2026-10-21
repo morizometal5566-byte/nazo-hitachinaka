@@ -54,6 +54,29 @@
   const station = (v) => { const n = norm(v); return n ? (STATION[n] || n) : ''; };
   const kana = (v) => norm(v);
   const digits = (v) => kanjiToNum(soft(v)).replace(/\D/g, '');
+  // 人の名前：呼び方のゆれ（姓名・続柄・さん付け）をそろえる
+  const PEOPLE = [
+    ['miyuki', ['風見みゆき', 'みゆき', '母', 'お母さん', 'おかあさん', 'はは', 'かあさん', 'ママ', '母親', 'みゆきさん', '莉々香の母', '野々香の母']],
+    ['nonoka', ['風見野々香', '野々香', 'ののか', '姉', 'お姉ちゃん', 'おねえちゃん', 'お姉さん', 'あね', '長女', '野々香さん']],
+    ['ririka', ['風見莉々香', '莉々香', 'りりか', '莉莉香', '妹', '次女', '莉々香さん']],
+    ['moriyama', ['森山浩行', '森山', 'もりやま', '浩行', '森山さん', '森山刑事', '森山係長']],
+    ['otsu', ['大津航', '大津', 'おおつ', '航', '助手', '元助手']],
+    ['sugaya', ['菅谷典子', '菅谷', 'すがや', '典子', '向かいの人', 'みなと珈琲']],
+    ['shiomi', ['潮見達郎', '潮見', 'しおみ', '達郎', '店主']],
+    ['father', ['父', 'お父さん', 'おとうさん', '父親', 'ちち']],
+    ['patrol', ['巡査', '交番', '交番の巡査', 'おまわりさん']],
+    ['kanshiki', ['鑑識', 'かんしき']],
+    ['none', ['なし', 'いない', '誰もいない', 'だれもいない', 'いません', '自分で見た', '自分']],
+  ];
+  const PMAP = {};
+  PEOPLE.forEach(([id, ns]) => ns.forEach((n) => { PMAP[norm(n)] = id; }));
+  const person = (v) => { const z = norm(v).replace(/(さん|ちゃん|くん|様|さま|刑事)$/, ''); const n = z.replace(/^(風見|かざみ)/, ''); return PMAP[norm(v)] || PMAP[z] || PMAP[n] || n; };
+  // キーワード：自由に書いた答えを、決まった言い方のどれかに寄せる（候補には正解も不正解も並べる）
+  function kwMatch(f, v) {
+    const n = norm(v);
+    for (const [id, words] of f.kw) if (words.some((w) => n.includes(norm(w)))) return id;
+    return n;
+  }
 
   // 欄の種類ごとに「そろえた形」にする。null＝形がおかしい（間違いの回数に数えない）
   function canon(f, raw) {
@@ -67,6 +90,9 @@
       default:
         if (f.canon === 'station') return station(s);
         if (f.canon === 'digits') { const d = digits(s); return d || null; }
+        if (f.canon === 'person') return person(s);
+        if (f.canon === 'kw') return kwMatch(f, s);
+        if (f.canon === 'set') { const d = [...new Set(digits(s).split(''))].sort().join(''); return d || null; }
         return kana(s);
     }
   }
@@ -109,6 +135,6 @@
     const u = unescape(encodeURIComponent(s)).split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ ((i * 7 + 19) & 0x3f))).join('');
     return typeof btoa === 'function' ? btoa(u) : Buffer.from(u, 'binary').toString('base64');
   }
-  const api = { soft, norm, kana, station, digits, parseTime, parseNum, parseDate, canon, sha256, hashField, veil, unveil, PUNCT };
+  const api = { soft, norm, kana, station, digits, person, kwMatch, parseTime, parseNum, parseDate, canon, sha256, hashField, veil, unveil, PUNCT };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.N19 = api;
 })(typeof window !== 'undefined' ? window : globalThis);
