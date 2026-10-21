@@ -1,9 +1,10 @@
-/* 十九年目のネガ 体験版 v4 — アプリ本体（素のJavaScript・サーバー不要・file:// でも動く）
+/* 十九年目のネガ 完全版 — アプリ本体（素のJavaScript・サーバー不要・file:// でも動く）
    スマホ縦・片手が基本。上：見出し／まんなか：物語・資料・謎／下：答える（親指の届く場所） */
 (function () {
   'use strict';
   const { DOCS, CHAT, STAGES } = window.CASE;
-  const KEY = 'negative19.proto.v4';
+  const KEY = 'negative19.full.v1';
+  const N = window.N19, ANS = window.ANS || { H3: {} };
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const mqDesk = window.matchMedia('(min-width: 900px)');
@@ -13,9 +14,10 @@
   /* ================= 保存 ================= */
   function fresh() {
     return {
-      v: 4, phase: 'title', stage: 0, step: 0, solved: {}, chat: [], read: [],
-      fold: {}, ph: {}, wrong: {}, hints: {}, drafts: {}, memo: '', pin: null, peek: false,
-      settings: { font: 'm', contrast: false, motion: false },
+      v: 5, phase: 'title', stage: 0, step: 0, solved: {}, chat: [], read: [],
+      fold: {}, ph: {}, ov: {}, dev: {}, fr: {}, trace: {}, neg: null, flags: {}, choice: null,
+      wrong: {}, hints: {}, drafts: {}, memo: '', pin: null, peek: false,
+      settings: { font: 'm', contrast: false, motion: false, cb: false },
       view: { panes: [{ doc: null, zoom: 1 }, { doc: null, zoom: 1 }], compare: false, active: 0 },
       lastFb: null, savedAt: null,
     };
@@ -42,126 +44,42 @@
   const reduced = () => S.settings.motion || mqReduce.matches;
   const isPhone = () => !mqDesk.matches;
 
-  /* ================= 入力のゆれをそろえる ================= */
-  const KANJI = { '〇': 0, '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
-  function kanjiToNum(str) {
-    return str.replace(/[〇零一二三四五六七八九十]+/g, (m) => {
-      let total = 0, cur = 0;
-      for (const ch of m) { if (ch === '十') { total += (cur || 1) * 10; cur = 0; } else cur = cur * 10 + KANJI[ch]; }
-      return String(total + cur);
-    });
-  }
-  const kataToHira = (s) => s.replace(/[\u30a1-\u30f6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
-  const soft = (s) => kataToHira(String(s || '').normalize('NFKC').toLowerCase()).trim();
-  const PUNCT = /[\s　「」『』。、．，,.!！?？・"'`ー〜~]/g;
-  const norm = (s) => soft(s).replace(PUNCT, '').replace(/(駅|えき|さん)$/g, '');
-  function parseTime(input) {
-    let x = soft(input).replace(/\s/g, '');
-    if (!x) return null;
-    x = kanjiToNum(x).replace(/(ごろ|頃|くらい|ぐらい|ころ|ちょうど)$/g, '');
-    const pm = /(午後|pm|p\.m\.|夜)/.test(x), am = /(午前|am|a\.m\.|朝)/.test(x);
-    x = x.replace(/(午後|午前|pm|am|p\.m\.|a\.m\.|夜|朝)/g, '');
-    let h, m, mt;
-    if ((mt = x.match(/^(\d{1,2})[:：.時](\d{1,2})分?$/))) { h = +mt[1]; m = +mt[2]; }
-    else if ((mt = x.match(/^(\d{1,2})時(半)?$/))) { h = +mt[1]; m = mt[2] ? 30 : 0; }
-    else if ((mt = x.match(/^(\d{3,4})$/))) { h = Math.floor(+mt[1] / 100); m = +mt[1] % 100; }
-    else return null;
-    if (h > 24 || m > 59) return null;
-    if (pm && h < 12) h += 12;
-    else if (!am && h < 12) h += 12; // 事件は夜なので、午前と書いていなければ夜とみなす
-    return h * 60 + m;
-  }
-  const clock = (t) => (t === null ? null : t % 720); // 文字盤の読み（12時間）
-  function parseNum(input) {
-    const x = kanjiToNum(soft(input).replace(/\s/g, ''));
-    const mt = x.match(/^(\d{1,4})(分|分前|ふん|ぷん)?$/);
-    return mt ? +mt[1] : null;
-  }
-  const STATION = {};
-  [['なかみなと', '那珂湊', 'nakaminato'], ['とのやま', '殿山', 'tonoyama'], ['ひらいそ', '平磯', 'hiraiso'], ['なかね', '中根', 'nakane'],
-   ['たかだのてっきょう', '高田の鉄橋', '高田鉄橋', 'たかだてっきょう'], ['みのはまがくえん', '美乃浜学園', 'みのはま'], ['いそざき', '磯崎', 'isozaki'],
-   ['あじがうら', '阿字ヶ浦', '阿字ケ浦', '阿字が浦', 'ajigaura'], ['かつた', '勝田', 'katsuta'], ['こうきまえ', '工機前'], ['かねあげ', '金上']]
-    .forEach((a) => a.forEach((n) => { STATION[norm(n)] = a[0]; }));
-  const station = (v) => { const n = norm(v); return n ? (STATION[n] || n) : ''; };
-
-  /* ================= 判定（欄をまとめて判定。どの欄が違うかは、よくある間違いのときだけ教える） ================= */
+  /* ================= 判定（欄ごとに「そろえた形」にしてハッシュで照合。答えそのものはコードに置かない） ================= */
   const GENERIC = 'まだ合っていない。';
-  const JUDGE = {
-    '0A'(v) {
-      const a = soft(v.w).replace(PUNCT, '').replace(/海/g, 'うみ').replace(/[二2]/g, 'ふた').replace(/駅/g, 'えき');
-      if (!a) return { invalid: '見えた言葉を入れてね。' };
-      if (a === 'うみへふたえき') return { ok: true };
-      if (a === 'みたふえうへき') return { ok: false, msg: '左上から順に読んだ？ 穴のそばに、えんぴつの数字があるよ。' };
-      if (/^[a-z]+$/.test(a)) return { ok: false, msg: 'ひらがなで入れてみて。' };
-      if (a.startsWith('うみへ')) return { ok: false, msg: '「うみへ」までは合ってる。続きを数字の順に。' };
-      return { ok: false, msg: GENERIC + '手紙を点線で折ると、穴から何が見える？' };
-    },
-    '0M'(v) {
-      const s = station(v.start), p = station(v.pw);
-      if (!s || !p) return { invalid: '2つの欄を、どちらも駅名で入れてね。' };
-      if (s === 'なかみなと' && p === 'ひらいそ') return { ok: true };
-      let msg = '開かなかった。……手紙と地図を、もう一度。';
-      if (s === 'ひらいそ') msg = '平磯は、カメラの印（潮見さんの日の出ポイント）のそば。手紙の「写真館」は、地図のどの記号？';
-      else if (p === 'ひらいそ') msg = '着いた駅は、つじつまが合ってる。スタートの駅をもう一度。';
-      else if (s === 'なかみなと' && (p === 'なかね' || p === 'たかだのてっきょう')) msg = '那珂湊から、川と田んぼのほう（勝田のほう）へ行ってない？ 海は地図のどっち？';
-      else if (s === 'なかみなと' && p === 'とのやま') msg = '海へ、いくつ進むんだった？';
-      else if (s === 'なかみなと') msg = 'スタートは合ってそう。そこから海へ、ふた駅。';
-      else if (p === 'いそざき' || p === 'みのはまがくえん') msg = 'スタートがずれてない？ 写真館は★の印。';
-      else if (p === 'あじがうら') msg = '終点まで行っちゃった。';
-      return { ok: false, msg };
-    },
-    '1A'(v) {
-      if (!v.key) return { invalid: '［1］の手がかりを選んでね。' };
-      const t = parseTime(v.t);
-      if (t === null) return { invalid: '［2］は時刻の形で（例：12:30、1230、12時30分）。' };
-      const c = clock(t);
-      if (v.key === 'name' && c === 550) return { ok: true };
-      if (c === 220) return { ok: false, msg: '交番の巡査と同じ読み方。……数字のない時計で、どうやって「上」を決めた？' };
-      if (c >= 160 && c <= 172) return { ok: false, msg: '長い針と短い針、逆に読んでない？' };
-      if (c === 550) return { ok: false, msg: 'その手がかりで上を決めたら、9時10分にはならないはず。……本当は何で決めた？' };
-      if (v.key === 'tag') return { ok: false, msg: '番号札は、鑑識さんが写真に合わせて置いたもの。時計の向きとは関係ないかも。' };
-      if (v.key === 'batt' || v.key === 'rule') return { ok: false, msg: '電池や物差しは、落ちたあとで動いたかもしれない。時計そのものに書いてあるものは？' };
-      return { ok: false, msg: '店名の向きにそろえた？ ↻ で回してから、短い針と長い針を読んでみて。' };
-    },
-    '1B'(v) {
-      const t = parseTime(v.m), n = parseNum(v.n);
-      if (t === null) return { invalid: '［1］は時刻の形で（例：12:30）。' };
-      if (n === null) return { invalid: '［2］は数字で（例：3）。' };
-      if (!v.dir) return { invalid: '［3］進んでいた／遅れていた、を選んでね。' };
-      const c = clock(t);
-      if (c === 636 && n === 6 && v.dir === 'fast') return { ok: true };
-      if (c === 84) return { ok: false, msg: '鏡の中の時計を、そのまま読んでない？ 鏡の中の店名、読める？' };
-      if (c === 636 && n === 6) return { ok: false, msg: '10:30に撮ったのに、時計は10:36。時計のほうが先に行ってない？' };
-      if (c === 636) return { ok: false, msg: '時計は読めてる。何と比べればいい？ 台紙を見て。' };
-      if (n === 6 && v.dir === 'fast') return { ok: false, msg: 'ずれの答えと、時計の読みがかみ合ってない。もう一度、鏡を直して読んでみて。' };
-      return { ok: false, msg: GENERIC + '鏡を ⇋ で直して、台紙の時刻と比べてみて。' };
-    },
-    '1M'(v) {
-      const t = parseTime(v.time), g = parseNum(v.gap);
-      if (t === null) return { invalid: '［1］は時刻の形で（例：12:30）。' };
-      if (g === null) return { invalid: '［2］は数字で（例：15）。' };
-      if (!v.proof) return { invalid: '［3］の裏づけを選んでね。' };
-      const bad = (t !== 1264 ? 1 : 0) + (g !== 37 ? 1 : 0) + (v.proof !== 'suga' ? 1 : 0);
-      if (!bad) return { ok: true, bad };
-      let msg = GENERIC;
-      if (t === 1270) msg = 'それは時計が「見せていた」時刻。……ずれてたよね？';
-      else if (t === 1276) msg = '進んでいる時計なら、本当の時刻はもっと前。';
-      else if (t < 1230 || t > 1320) msg = '検視の幅（20:30〜22:00）の外になってるよ。';
-      else if (t === 1264 && g !== 37) msg = '時刻からの引き算をもう一度。110番は1-1に。';
-      else if (v.proof === 'otsu' || v.proof === 'nono') msg = 'そのメッセージ、21:04でも21:10でも同じように説明できない？ どちらか一方にだけ合う証言は？';
-      else if (v.proof === 'patrol') msg = '巡査が着いたのは21:50。襲われた時刻とは関係なさそう。';
-      return { ok: false, bad, msg };
-    },
-  };
+  const FORM_MSG = { time: '時刻の形で（例：21:30、2130、21時30分）', num: '数字で（例：3）', date: '日付の形で（例：2008年1月1日）', text: '文字で' };
+  function judge(p, raw) {
+    const c = {}, okk = {};
+    for (const f of p.fields) {
+      const v = N.canon(f, raw[f.k]);
+      if (v === null) return { invalid: `${f.label.replace(/^［\d］/, (m) => m)}は${FORM_MSG[f.canon === 'digits' ? 'num' : f.type] || '正しい形で'}入れてね。` };
+      c[f.k] = v;
+    }
+    let bad = 0;
+    for (const f of p.fields) {
+      const hs = (ANS[p.id] && ANS[p.id][f.k]) || [];
+      okk[f.k] = hs.includes(N.hashField(p.id, f.k, c[f.k]));
+      if (!okk[f.k]) bad++;
+    }
+    if (!bad) return { ok: true, bad: 0, c };
+    const inSet = (k, v) => (Array.isArray(v) ? v : [v]).includes(c[k]);
+    const rule = (p.miss || []).find((r) =>
+      (!r.eq || Object.keys(r.eq).every((k) => inSet(k, r.eq[k]))) &&
+      (!r.okf || r.okf.every((k) => okk[k])) &&
+      (!r.ngf || r.ngf.every((k) => !okk[k])) &&
+      (!r.test || (() => { try { return r.test(c); } catch (e) { return false; } })()));
+    return { ok: false, bad, msg: rule ? rule.msg : (p.fb || GENERIC), flag: rule && rule.flag, c };
+  }
+  const hintsOf = (p) => { const h3 = ANS.H3[p.id]; let t = ''; try { t = h3 ? N.unveil(h3) : ''; } catch (e) {} return [...p.hint, '答え：' + t]; };
 
   /* ================= 便利なもの ================= */
   const stageObj = () => STAGES[Math.min(S.stage, STAGES.length - 1)];
   const isClear = () => S.stage >= STAGES.length;
   const curPuzzle = () => (isClear() ? null : STAGES[S.stage].puzzles[S.step]);
-  const docsOfStage = (i) => (STAGES[i] ? STAGES[i].docs : []);
+  const docsOfStage = (i) => (STAGES[i] ? STAGES[i].docs.filter((id) => !DOCS[id].after || S.solved[DOCS[id].after]) : []);
   const unlockedDocs = () => { const out = []; for (let i = 0; i <= Math.min(S.stage, STAGES.length - 1); i++) out.push(...docsOfStage(i)); return out; };
   const curDocs = () => docsOfStage(Math.min(S.stage, STAGES.length - 1));
-  const archivedDocs = () => { const out = []; for (let i = 0; i < Math.min(S.stage, STAGES.length - 1); i++) out.push(...docsOfStage(i)); return out; };
+  const rereadOn = () => isClear() && !!S.choice;
+  const archivedDocs = () => { const out = []; const n = rereadOn() ? STAGES.length : Math.min(S.stage, STAGES.length - 1); for (let i = 0; i < n; i++) out.push(...docsOfStage(i)); return out; };
   const allPuzzles = () => STAGES.flatMap((s) => s.puzzles);
   const viewerOpen = () => document.body.classList.contains('viewer-open');
 
@@ -194,6 +112,7 @@
   function msgHTML(m) {
     if (m.who === 'beat') return `<li class="beat"><p>${esc(m.t)}</p></li>`;
     const chip = m.doc && DOCS[m.doc] ? `<button type="button" class="doc-chip" data-open="${m.doc}"><span aria-hidden="true">${DOCS[m.doc].icon}</span> ${m.doc} ${esc(DOCS[m.doc].title)}</button>` : '';
+    if (m.who === 'mori') return `<li class="msg mori"><span class="who">森山</span><p>${esc(m.t)}</p></li>`;
     return `<li class="msg"><span class="who">莉々香</span><p>${esc(m.t)}</p>${chip}</li>`;
   }
   const shown = {};
@@ -244,7 +163,8 @@
       if (reduced()) { shown[job.key] = i + 1; $('#feed').insertAdjacentHTML('beforeend', msgHTML(msgs[i])); keepBottomVisible(); next(); return; }
       const ty = document.createElement('li');
       ty.className = msgs[i].who === 'beat' ? 'beat typing' : 'msg typing'; ty.setAttribute('aria-hidden', 'true');
-      ty.innerHTML = msgs[i].who === 'beat' ? '<p>…</p>' : '<span class="who">莉々香</span><p><span class="dots"><i></i><i></i><i></i></span></p>';
+      ty.className += msgs[i].who === 'mori' ? ' mori' : '';
+      ty.innerHTML = msgs[i].who === 'beat' ? '<p>…</p>' : '<span class="who">' + (msgs[i].who === 'mori' ? '森山' : '莉々香') + '</span><p><span class="dots"><i></i><i></i><i></i></span></p>';
       $('#feed').appendChild(ty); keepBottomVisible();
       setTimeout(() => {
         ty.remove(); shown[job.key] = i + 1;
@@ -300,17 +220,30 @@
   function renderPuzzle() {
     const box = $('#puzzle');
     if (isClear()) {
-      box.innerHTML = `${stepsHTML()}${factsHTML()}<div class="clear-card"><p class="clear-stamp" aria-hidden="true">体験版クリア</p>
-        <h2 id="pz-name">S1「止まった時計」解決</h2>
-        <p>潮見さんが襲われたのは <b>21時04分</b>。止まった時計は6分進んでいた。野々香さんの110番は、その37分あと。そして「今から行きます」は、襲われた8分あとに送られていた。</p>
-        <p class="muted">次のS2「第一発見者の3つのおかしさ」は制作中。新しい道具「重ねる」「並べる」が増えます。<br>体験版の中に、この先で意味が変わる言葉や物が、いくつも置いてあります。メモに残しておくと、あとで「あっ」となるかも。</p>
-        <div class="clear-btns"><button type="button" class="btn ghost" data-menu="memo">メモを見る</button><button type="button" class="btn ghost" id="btn-clear-reset">最初から遊ぶ</button></div></div>`;
-      $('#btn-clear-reset').onclick = askReset;
+      if (!S.choice) {
+        box.innerHTML = `${factsHTML()}<div class="clear-card choice-card" ${chatBusy() ? 'hidden' : ''}><p class="clear-stamp" aria-hidden="true">最後の選択</p>
+          <h2 id="pz-name">ネガを、どうする？</h2>
+          <p>19年前の写真。誰の罪にも、もう問えない。それでも、残すか。</p>
+          <div class="clear-btns"><button type="button" class="btn primary" data-choice="submit">署に出す</button><button type="button" class="btn ghost" data-choice="sea">平磯の海に返す</button></div></div>`;
+        $$('[data-choice]', box).forEach((b) => b.onclick = () => choose(b.dataset.choice));
+      } else {
+        box.innerHTML = `${factsHTML()}<div class="clear-card"><p class="clear-stamp" aria-hidden="true">完</p>
+          <h2 id="pz-name">十九年目のネガ　解決</h2>
+          <ul class="epi">
+            <li><b>風見みゆき</b>：潮見達郎さんの殺害を認め、起訴された。「野々香を守るため」と信じて払い続けた19年のことも、自分の口で話した。</li>
+            <li><b>風見野々香</b>：母をかばって嘘をついたことは、家族のための証拠隠しにあたるが、親族なので刑は免除された（刑法105条）。今も赤いマフラーで、干し芋を売っている。</li>
+            <li><b>森山浩行</b>：現場からネガ袋を持ち去ったことを自ら報告し、警察を辞めた（証拠隠滅）。</li>
+            <li><b>風見莉々香</b>：8歳のときのことは、罪に問われない（14歳未満・刑法41条）。刑事を続けている。黄色い帽子は、いま莉々香の机の引き出しにある。</li></ul>
+          <p class="muted">${S.choice === 'submit' ? 'ネガは証拠として署に出した。' : 'ネガは平磯の海に返した。'}　遊んでくれて、ありがとう。</p>
+          <p class="sm">🔁 <b>読み返しモード</b>：資料の引き出しに全部の資料が入りました。開くと、最初から置いてあった伏線の「本当の意味」が一行ずつ出ます。</p>
+          <div class="clear-btns"><button type="button" class="btn primary" data-menu="archive">🔁 読み返す</button><button type="button" class="btn ghost" data-menu="memo">メモを見る</button><button type="button" class="btn ghost" id="btn-clear-reset">最初から遊ぶ</button></div></div>`;
+        $('#btn-clear-reset').onclick = askReset;
+      }
       renderBottom();
       return;
     }
     const p = curPuzzle();
-    const kindLabel = { small: '小謎', mid: p.id === '0M' ? '中謎（ロック）' : '中謎（全部そろえて判定）' }[p.kind];
+    const kindLabel = { small: '小謎', mid: p.id === '0M' ? '中謎（ロック）' : p.id === '7M' ? '大謎（全部そろえて判定）' : '中謎（全部そろえて判定）' }[p.kind];
     const dr = S.drafts[p.id] || {};
     const fb = S.lastFb && S.lastFb.id === p.id ? S.lastFb : null;
     const w = S.wrong[p.id] || 0;
@@ -373,12 +306,13 @@
       if (el) el.focus();
       return;
     }
-    const r = JUDGE[p.id](v);
+    const r = judge(p, v);
     if (r.invalid) { S.lastFb = { id: p.id, msg: r.invalid, cls: 'info' }; save(); fb.className = 'pz-fb info'; fb.textContent = r.invalid; return; }
     if (!r.ok) {
       S.wrong[p.id] = (S.wrong[p.id] || 0) + 1;
+      if (r.flag) S.flags[r.flag] = true;
       let msg = r.msg;
-      if (r.bad && S.wrong[p.id] >= 3) msg = `間違いは${r.bad}つ。` + msg.replace(GENERIC, '');
+      if (p.fields.length > 1 && S.wrong[p.id] >= 3) msg = `間違いは${r.bad}つ。` + msg.replace(GENERIC, '');
       S.lastFb = { id: p.id, msg, cls: 'ng' }; save();
       renderPuzzle();
       const card = $('.pz-card'); if (card && !reduced()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); }
@@ -405,6 +339,7 @@
     save();
     setTimeout(() => {
       if (lastInStage) {
+        if (isClear()) { deliver(chatKey, () => setTimeout(renderPuzzle, 0)); renderAll(); return; }
         renderAll();
         deliver(chatKey, () => {
           if (!isClear()) {
@@ -412,13 +347,22 @@
               const n = curDocs().length;
               toast(`📨 莉々香から資料が届きました（${n}件）`, { label: '資料を見る', fn: () => { const c = $('#cards .card'); if (c) { c.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); c.focus({ preventScroll: true }); } } });
             });
-          } else toast('🎉 体験版クリア。遊んでくれてありがとう。');
+          } else renderPuzzle();
         });
       } else {
-        renderPuzzle();
+        renderPuzzle(); renderCards();
         deliver(chatKey);
       }
     }, reduced() ? 150 : 1100);
+  }
+
+  const chatBusy = () => typing || queue.length > 0;
+  function choose(c) {
+    if (S.choice) return;
+    S.choice = c; save();
+    const box = $('#puzzle .choice-card'); if (box) box.hidden = true;
+    const then = () => { renderAll(); const h = $('#pz-name'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } };
+    deliver(`s8.${c}`, () => { if (S.flags.yellow) deliver('s8.yellow', then); else then(); });
   }
 
   /* ================= ビューア ================= */
@@ -437,13 +381,13 @@
       const opts = unlockedDocs().map((id) => `<option value="${id}"${id === pn.doc ? ' selected' : ''}>${id} ${esc(DOCS[id].title)}</option>`).join('');
       html += `<section class="pane${n === 2 && S.view.active === i ? ' active' : ''}" data-pane="${i}" aria-label="${n === 2 ? (i ? '右' : '左') + 'の資料' : '資料'}">
         ${n === 2 ? `<div class="pane-head"><label class="sr-only" for="sel-${i}">表示する資料</label><select id="sel-${i}" class="pane-sel"><option value="">資料を選ぶ</option>${opts}</select></div>` : ''}
-        <div class="pane-scroll" tabindex="0" aria-label="資料の本文。＋−キーで拡大縮小">${d ? `<div class="doc-zoom" style="zoom:${pn.zoom}">${d.html()}</div>` : '<p class="pane-empty">資料カードを選ぶと、ここに表示されます。</p>'}</div>
+        <div class="pane-scroll" tabindex="0" aria-label="資料の本文。＋−キーで拡大縮小">${d ? `<div class="doc-zoom" style="zoom:${pn.zoom}">${rereadOn() && d.re ? `<p class="re-note"><b>🔁 読み返し</b>${esc(d.re)}</p>` : ''}${d.html()}</div>` : '<p class="pane-empty">資料カードを選ぶと、ここに表示されます。</p>'}</div>
       </section>`;
     }
     wrap.innerHTML = html;
     $$('.pane', wrap).forEach(bindPane);
     renderViewerBar();
-    applyPhotos(); applyFolds();
+    applyPhotos(); applyFolds(); window.TOOLS.apply(wrap);
   }
   function renderViewerBar() {
     const pn = S.view.panes[activePane()];
@@ -502,7 +446,8 @@
     if (isPhone()) {
       if (!viewerOpen()) {
         document.body.classList.add('viewer-open');
-        try { history.pushState({ vw: 1 }, ''); } catch (e) {}
+        if (pendingBack) wantPush = true; // 「もどる」の履歴処理が終わってから積む
+        else { try { history.pushState({ vw: 1 }, ''); } catch (e) {} }
       }
       $('#btn-viewer-close').focus({ preventScroll: true });
     } else {
@@ -510,10 +455,11 @@
     }
     renderPeek();
   }
+  let pendingBack = false, wantPush = false;
   function closeViewer(fromPop) {
     if (!viewerOpen()) return;
     document.body.classList.remove('viewer-open');
-    if (!fromPop && history.state && history.state.vw) { try { history.back(); } catch (e) {} }
+    if (!fromPop && history.state && history.state.vw) { pendingBack = true; try { history.back(); } catch (e) { pendingBack = false; } }
     renderPeek();
     const id = S.view.panes[0].doc;
     const c = $(`#cards [data-open="${id}"]`) || $('#puzzle');
@@ -540,7 +486,7 @@
     if (!show) { pk.hidden = true; return; }
     const slot = inViewer ? $('#peek-slot-viewer') : $('#peek-slot-main');
     if (pk.parentElement !== slot) slot.appendChild(pk);
-    if (pk.dataset.doc !== S.pin) { $('#peek-body').innerHTML = `<div class="doc-zoom">${DOCS[S.pin].html()}</div>`; pk.dataset.doc = S.pin; applyPhotos(); applyFolds(); }
+    if (pk.dataset.doc !== S.pin) { $('#peek-body').innerHTML = `<div class="doc-zoom">${DOCS[S.pin].html()}</div>`; pk.dataset.doc = S.pin; applyPhotos(); applyFolds(); window.TOOLS.apply($('#peek-body')); }
     $('#peek-title').textContent = `📌 ${S.pin} ${DOCS[S.pin].title}`;
     pk.hidden = false;
   }
@@ -656,7 +602,7 @@
     if (menuTab === 'memo') { $('#memo').value = S.memo; $('#memo-count').textContent = `${S.memo.length}文字`; }
     if (menuTab === 'settings') {
       $$('input[name="font"]').forEach((r) => { r.checked = r.value === S.settings.font; });
-      $('#set-contrast').checked = S.settings.contrast; $('#set-motion').checked = S.settings.motion;
+      $('#set-contrast').checked = S.settings.contrast; $('#set-motion').checked = S.settings.motion; $('#set-cb').checked = !!S.settings.cb;
     }
   }
   const HINT_ASK = ['ヒント1を見ますか？（どこを見ればいいかが分かります）', 'ヒント2を見ますか？（何をすればいいかが分かります）', 'ヒント3は「答え」です。見ますか？'];
@@ -665,8 +611,9 @@
     const box = $('#hint-box');
     if (!p) { box.innerHTML = '<p class="muted">いまは解く謎がありません。</p>'; return; }
     const n = S.hints[p.id] || 0;
+    const HS = hintsOf(p);
     box.innerHTML = `<p class="hint-for">いまの謎：<b>${esc(p.step)} ${esc(p.name)}</b></p>
-      <ol class="hints">${p.hint.map((h, i) => i < n ? `<li class="open"><span class="h-lv">${i === 2 ? '答え' : 'ヒント' + (i + 1)}</span>${esc(h)}</li>` : i === n ? `<li><button type="button" class="btn ${i === 2 ? 'danger' : 'ghost'} sm" id="btn-hint-next">${i === 2 ? '答えを見る' : `ヒント${i + 1}を見る`}</button></li>` : `<li class="locked"><span class="h-lv">${i === 2 ? '答え' : 'ヒント' + (i + 1)}</span>ヒント${i}を見ると開けます</li>`).join('')}</ol>
+      <ol class="hints">${HS.map((h, i) => i < n ? `<li class="open"><span class="h-lv">${i === 2 ? '答え' : 'ヒント' + (i + 1)}</span>${esc(h)}</li>` : i === n ? `<li><button type="button" class="btn ${i === 2 ? 'danger' : 'ghost'} sm" id="btn-hint-next">${i === 2 ? '答えを見る' : `ヒント${i + 1}を見る`}</button></li>` : `<li class="locked"><span class="h-lv">${i === 2 ? '答え' : 'ヒント' + (i + 1)}</span>ヒント${i}を見ると開けます</li>`).join('')}</ol>
       <p class="muted sm">ヒントは自分で開くまで見えません。見ても減点はありません。</p>`;
     const b = $('#btn-hint-next');
     if (b) b.onclick = async () => {
@@ -696,6 +643,7 @@
     $$('input[name="font"]').forEach((r) => r.onchange = () => { S.settings.font = r.value; applySettings(); save(); });
     $('#set-contrast').onchange = (e) => { S.settings.contrast = e.target.checked; applySettings(); save(); };
     $('#set-motion').onchange = (e) => { S.settings.motion = e.target.checked; applySettings(); save(); };
+    $('#set-cb').onchange = (e) => { S.settings.cb = e.target.checked; applySettings(); save(); window.TOOLS.apply(); };
     $('#btn-reset').onclick = askReset;
   }
   async function askReset() {
@@ -706,6 +654,7 @@
     document.body.dataset.font = S.settings.font;
     document.body.classList.toggle('hc', !!S.settings.contrast);
     document.body.classList.toggle('reduce', reduced());
+    document.body.classList.toggle('cb', !!S.settings.cb);
   }
 
   /* ================= 画面の高さ（キーボードが出ても、答える欄とボタンが隠れない） ================= */
@@ -721,14 +670,14 @@
   document.addEventListener('focusin', (e) => {
     const el = e.target;
     if (!el.matches || !el.matches('#puzzle input[type="text"]') || !isPhone()) return;
-    setTimeout(() => { fitViewport(); el.scrollIntoView({ block: 'center', behavior: 'auto' }); }, 260);
+    setTimeout(() => { fitViewport(); el.scrollIntoView({ block: 'center', behavior: 'auto' }); updateMainLabel(); }, 260);
   });
 
   /* ================= 全体 ================= */
   function renderAll() {
     const st = stageObj();
-    $('#stage-label').textContent = isClear() ? '体験版クリア' : st.label;
-    $('#objective-text').textContent = isClear() ? '続き（S2）は制作中' : st.objective;
+    $('#stage-label').textContent = isClear() ? (S.choice ? 'エピローグ' : '夜明け') : st.label;
+    $('#objective-text').textContent = isClear() ? (S.choice ? 'クリア。資料を読み返せます' : 'ネガをどうするか、決める') : st.objective;
     renderFeed(); renderCards(); renderPuzzle(); renderPanes(); renderPeek();
   }
   function startGame() {
@@ -738,6 +687,8 @@
     renderAll();
     if (!S.chat.includes('s0.start')) deliver('s0.start');
     if (!isClear() && S.stage > 0 && !S.chat.includes(`s${S.stage}.start`)) deliver(`s${S.stage}.start`);
+    if (isClear() && !S.chat.includes('s7.7M')) deliver('s7.7M', () => setTimeout(renderPuzzle, 0));
+    if (isClear() && S.choice && !S.chat.includes(`s8.${S.choice}`)) deliver(`s8.${S.choice}`);
     $('#puzzle').focus({ preventScroll: true });
   }
   function bindGlobal() {
@@ -777,7 +728,10 @@
       v.active = v.compare ? 1 : 0; save(); renderPanes(); renderCards();
     };
     document.addEventListener('toggle', (e) => { if (e.target.matches && e.target.matches('details.facts')) { S.factsOpen = e.target.open; save(); } }, true);
-    window.addEventListener('popstate', () => closeViewer(true));
+    window.addEventListener('popstate', () => {
+      if (pendingBack) { pendingBack = false; if (wantPush) { wantPush = false; try { history.pushState({ vw: 1 }, ''); } catch (e) {} } return; }
+      closeViewer(true);
+    });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && viewerOpen() && !$('dialog[open]')) { e.preventDefault(); closeViewer(false); }
     });
@@ -791,11 +745,12 @@
   bindMenu(); bindGlobal(); fitViewport();
   if (hadSave) {
     $('#btn-continue').hidden = false; $('#btn-new2').hidden = false; $('#btn-new').hidden = true;
-    $('#btn-continue').textContent = `続きから（${isClear() ? '体験版クリア' : STAGES[S.stage].label}）`;
+    $('#btn-continue').textContent = `続きから（${isClear() ? (S.choice ? 'クリア・読み返し' : '夜明け') : STAGES[S.stage].label}）`;
   }
   $('#btn-continue').onclick = startGame;
   $('#btn-new').onclick = startGame;
   $('#btn-new2').onclick = async () => { const ok = await confirmDlg('はじめから遊びますか？ 今の進み具合とメモは消えます。', 'はじめから'); if (ok) wipe(); };
 
-  window.__proto = { state: () => JSON.parse(JSON.stringify(S)), parseTime, parseNum, norm, station, judge: (id, v) => JUDGE[id](v) };
+  window.TOOLS.init({ S: () => S, save, cb: () => !!S.settings.cb });
+  window.__proto = { state: () => JSON.parse(JSON.stringify(S)), judge: (id, v) => judge(allPuzzles().find((p) => p.id === id), v), N };
 })();

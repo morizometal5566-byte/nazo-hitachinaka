@@ -1,4 +1,4 @@
-/* 十九年目のネガ 体験版 v4 — スマホ縦・片手が基本（360〜430px）。PCは左右2列 */
+/* 十九年目のネガ 完全版 — スマホ縦・片手が基本（360〜430px）。PCは左右2列 */
 :root{
   --bg:#17191d; --bg2:#1f2228; --panel:#23272e; --line:#3a3f48; --ink:#f1ede4; --muted:#b9b5ab;
   --accent:#f0b44a; --accent-ink:#1b1406; --ok:#7fd18b; --ng:#ff9a8a; --info:#9cc8ff;
@@ -322,3 +322,94 @@ body.reduce *,body.reduce *::before,body.reduce *::after{animation:none!importan
 @media (max-width:899px){ .vw-bar .zoom{display:none} .vw-bar .zcycle{margin-left:auto} .vw-bar{gap:6px} }
 @media (min-width:900px){ .vw-bar .zcycle{display:none} }
 @media (max-width:420px){ #btn-pin .vb-t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)} #btn-pin{min-width:48px;padding:0 .5em} .vb-btn{padding:0 .7em} }
+
+/* ===== 完全版で増えた資料と道具 ===== */
+.stmts{margin:.4em 0;padding-left:1.6em}
+.stmts li{margin:.35em 0;padding-left:.2em}
+.stmts li::marker{font-weight:700;color:#7a1f1f}
+.tv{width:100%;border-collapse:collapse;font-size:.95rem;font-family:var(--serif);background:#f5efdf}
+.tv th,.tv td{border:1px solid #9b9482;padding:.35em .45em;vertical-align:top;text-align:left}
+.tv th{background:#e7dcc2;font-family:var(--sans);font-size:.875rem}
+.tv td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+.typed{font-family:var(--serif);letter-spacing:.04em;line-height:1.9}
+.letter{background:#f7f3e8;border-left:6px double #c9bfa6}
+.blog-list{list-style:none;padding:0;margin:.4em 0}
+.blog-list li{display:flex;gap:.8em;padding:.5em 0;border-bottom:1px dotted #b5ab93}
+.blog-list time{flex:none;font-weight:700;color:#7a4b00;font-variant-numeric:tabular-nums;min-width:2.6em}
+.aside{font-size:.9375rem;color:#4f4a40;background:#fff;border:1px dashed #b9b09a;padding:.3em .6em;margin:.6em 0 0}
+.re-note{margin:0 auto 10px;max-width:760px;background:#2f2a1d;border:1px solid var(--accent);color:#ffe6b0;border-radius:10px;padding:.55em .8em;font-size:.95rem}
+.re-note b{display:block;color:var(--accent);font-size:.875rem}
+
+/* 重ねる */
+.ov{margin:12px 0 18px}
+.ov-frame{background:#fff;border-radius:2px;line-height:0;overflow:hidden;box-shadow:inset 0 0 0 1px #c8bfa8}
+.ov-svg{width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;touch-action:none}
+.ov-sheet{cursor:grab;touch-action:none;outline:none}
+.ov-sheet:focus-visible .ov-xf{filter:drop-shadow(0 0 3px #f0b44a) drop-shadow(0 0 2px #f0b44a)}
+.ov.dragging .ov-sheet{cursor:grabbing}
+.ov-xf{transition:transform .25s ease}
+.ov.dragging .ov-xf{transition:none}
+.reduce .ov-xf{transition:none}
+.ov-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 6px}
+.ov-state{font-size:.875rem;color:#5f5a4c;font-family:var(--sans)}
+.ov-ok{margin:6px 0;padding:.4em .7em;border-radius:8px;background:#e3f4e1;color:#1f5f2a;font-weight:700;font-family:var(--sans);font-size:.95rem}
+.ov.snapped .ov-frame{box-shadow:inset 0 0 0 3px #2e7d32}
+.ov-svg .grid-k{font-family:var(--sans);font-size:31px;font-weight:700;fill:#333}
+.ov-svg .hole-no{font-family:var(--hand);font-size:20px;font-weight:700;fill:#5d4037}
+.ov-svg .back-note{font-family:var(--serif);font-size:14px;fill:#6d6250}
+.ov-svg .kid{font-family:var(--hand);font-size:19px;fill:#2b3a67}
+
+/* なぞる（ダイヤ図） */
+.trace{margin:12px 0 18px}
+.svg-diagram{width:100%;height:auto;display:block;background:#fffdf6;touch-action:none;user-select:none;-webkit-user-select:none}
+.trn-hit{fill:none;stroke:transparent;stroke-width:22;stroke-linecap:round;stroke-linejoin:round;cursor:crosshair}
+.trn-line{fill:none;stroke:#4e342e;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.trn.on .trn-line{stroke:#c62828;stroke-width:4.5}
+.trn:focus{outline:none}.trn:focus-visible .trn-line{stroke:#c62828;stroke-width:4.5}
+.trace-out{margin:6px 0;min-height:2.2em;padding:.35em .7em;border-radius:8px;background:#2d2a24;color:#fff;font-family:var(--sans);font-weight:700;font-variant-numeric:tabular-nums}
+
+/* 現像 */
+.dev{margin:12px 0 18px;--d:0}
+.dev-img{line-height:0}
+.dev-img svg{width:100%;height:auto;display:block;filter:brightness(calc(1 + var(--d) * .9)) contrast(calc(1 - var(--d) * .15))}
+.dev .dark-veil{opacity:calc(1 - var(--d))}
+.dev-reveal{opacity:.06}
+.dev .dev-reveal{opacity:calc(.06 + .94 * var(--d) * var(--d))}
+.dev-ctl{display:flex;align-items:center;gap:10px;margin:8px 0;font-family:var(--sans);font-size:.95rem;font-weight:700}
+.dev-ctl input[type=range]{flex:1;min-width:0;height:44px;accent-color:#c62828}
+.dev-val{min-width:2.2em;text-align:right;font-variant-numeric:tabular-nums}
+
+/* かけら */
+.frags{margin:12px 0 18px}
+.frag-row{display:flex;gap:6px;align-items:center;justify-content:center;background:#3b2f26;padding:10px;border-radius:4px;min-height:150px}
+.frag{flex:1 1 0;min-width:0;max-width:34%;padding:0;border:2px solid transparent;background:none;cursor:pointer;border-radius:4px;touch-action:manipulation;line-height:0}
+.frag svg{width:100%;height:auto;display:block;transition:transform .3s ease}
+.reduce .frag svg{transition:none}
+.frag.sel{border-color:#f0b44a;box-shadow:0 0 0 3px rgba(240,180,74,.5)}
+.frag-joined{display:none;line-height:0;background:#3b2f26;padding:10px;border-radius:4px}
+.frag-joined svg{width:100%;height:auto;display:block}
+.frags.snapped .frag-row{display:none}
+.frags.snapped .frag-joined{display:block}
+.frag-help{font-size:.9rem;font-family:var(--sans);margin:6px 0}
+
+/* ネガ */
+.neg{margin:12px 0 18px}
+.neg-film{background:#1b1410;padding:16px 8px;border-radius:4px;background-image:repeating-linear-gradient(90deg,#1b1410 0 14px,#d9cbb0 14px 24px,#1b1410 24px 38px);background-size:100% 10px;background-repeat:repeat-x;background-position:0 3px,0 calc(100% - 3px)}
+.neg-frame{line-height:0;transition:filter .2s}
+.neg-svg{width:100%;height:auto;display:block}
+.neg-g{transition:transform .3s ease}
+.reduce .neg-g{transition:none}
+.neg .cb{font-family:var(--sans);font-size:22px;font-weight:700;fill:#111;stroke:#fff;stroke-width:4px;paint-order:stroke;display:none}
+.neg.cb-on .cb{display:inline}
+.neg-desc{color:var(--paper-ink)}
+
+/* 森山の言葉・エピローグ */
+.msg.mori p{background:#d9e2ec;color:#1d2733;border-radius:16px 4px 16px 16px}
+.msg.mori{align-self:flex-end;text-align:right}
+.msg.mori .who{position:static!important;width:auto!important;height:auto!important;clip:auto!important;margin:0 4px 2px 0}
+.epi{padding-left:1.1em;margin:.6em 0}
+.epi li{margin:.45em 0}
+.choice-card .clear-btns .btn{flex:1 1 40%}
+.hc .ov-ok{background:#fff;color:#000;border:2px solid #000}
+.hc .trace-out{background:#000}
+.doc:not(.letter-doc) .sr-text{color:var(--paper-ink)}
