@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   const { DOCS, CHAT, STAGES } = window.CASE;
-  const KEY = 'negative19.v6';
+  const KEY = 'negative19.v8';
   const N = window.N19, ANS = window.ANS || {};
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -14,8 +14,8 @@
   /* ================= 保存 ================= */
   function fresh() {
     return {
-      v: 6, phase: 'title', stage: 0, step: 0, solved: {}, chat: [], read: [],
-      fold: {}, ph: {}, ov: {}, dev: {}, fr: {}, trace: {}, neg: null, flags: {}, choice: null,
+      v: 8, phase: 'title', stage: 0, step: 0, solved: {}, chat: [], read: [],
+      fold: {}, ph: {}, ov: {}, dev: {}, dr: {}, fr: {}, trace: {}, neg: null, flags: {}, choice: null,
       wrong: {}, hints: {}, drafts: {}, memo: '', pin: null, peek: false,
       settings: { font: 'm', contrast: false, motion: false, cb: false },
       view: { panes: [{ doc: null, zoom: 1 }, { doc: null, zoom: 1 }], compare: false, active: 0 },
@@ -28,7 +28,7 @@
       if (!raw) return null;
       const d = JSON.parse(raw);
       const f = fresh();
-      if (d.v !== 6) return null;
+      if (d.v !== 8) return null;
       return Object.assign(f, d, { settings: Object.assign(f.settings, d.settings || {}), view: Object.assign(f.view, d.view || {}) });
     } catch (e) { return null; }
   }
@@ -111,6 +111,7 @@
   const queue = [];
   let typing = false;
   function msgHTML(m) {
+    if (m.video) return `<li class="vidmsg">${window.VID.html(m.video, { cap: m.t })}</li>`;
     if (m.who === 'beat') return `<li class="beat"><p>${esc(m.t)}</p></li>`;
     const chip = m.doc && DOCS[m.doc] ? `<button type="button" class="doc-chip" data-open="${m.doc}"><span aria-hidden="true">${DOCS[m.doc].icon}</span> ${m.doc} ${esc(DOCS[m.doc].title)}</button>` : '';
     if (m.who === 'mori') return `<li class="msg mori"><span class="who">森山</span><p>${esc(m.t)}</p></li>`;
@@ -163,9 +164,9 @@
       if (i >= msgs.length) { finish(); return; }
       if (reduced()) { shown[job.key] = i + 1; $('#feed').insertAdjacentHTML('beforeend', msgHTML(msgs[i])); keepBottomVisible(); next(); return; }
       const ty = document.createElement('li');
-      ty.className = msgs[i].who === 'beat' ? 'beat typing' : 'msg typing'; ty.setAttribute('aria-hidden', 'true');
+      ty.className = (msgs[i].who === 'beat' || msgs[i].video) ? 'beat typing' : 'msg typing'; ty.setAttribute('aria-hidden', 'true');
       ty.className += msgs[i].who === 'mori' ? ' mori' : '';
-      ty.innerHTML = msgs[i].who === 'beat' ? '<p>…</p>' : '<span class="who">' + (msgs[i].who === 'mori' ? '森山' : '莉々香') + '</span><p><span class="dots"><i></i><i></i><i></i></span></p>';
+      ty.innerHTML = (msgs[i].who === 'beat' || msgs[i].video) ? '<p>…</p>' : '<span class="who">' + (msgs[i].who === 'mori' ? '森山' : '莉々香') + '</span><p><span class="dots"><i></i><i></i><i></i></span></p>';
       $('#feed').appendChild(ty); keepBottomVisible();
       setTimeout(() => {
         ty.remove(); shown[job.key] = i + 1;
@@ -759,5 +760,6 @@
   $('#btn-new2').onclick = async () => { const ok = await confirmDlg('はじめから遊びますか？ 今の進み具合とメモは消えます。', 'はじめから'); if (ok) wipe(); };
 
   window.TOOLS.init({ S: () => S, save, cb: () => !!S.settings.cb });
+  window.PLAY.init({ S: () => S, save, reduced: () => reduced() });
   window.__proto = { state: () => JSON.parse(JSON.stringify(S)), judge: (id, v) => judge(allPuzzles().find((p) => p.id === id), v), N };
 })();

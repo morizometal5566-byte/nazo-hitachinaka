@@ -4,16 +4,30 @@
 <meta charset="utf-8">
 <link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-<meta name="theme-color" content="#17191d">
+<meta name="theme-color" content="#1b2238">
 <title>十九年目のネガ ― ひたちなか・那珂湊の謎解き事件簿</title>
+<meta property="og:title" content="十九年目のネガ ― ひたちなか・那珂湊の謎解き事件簿">
+<meta property="og:description" content="雪の港町の写真館で、事件が起きた。残されたのは、一本のネガと、白い猫。スマホで遊べる謎解き。">
+<meta property="og:image" content="https://morizometal5566-byte.github.io/nazo-hitachinaka/assets/img/ogp_1200x630.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDMincho&family=Klee+One:wght@600&family=Shippori+Mincho+B1:wght@800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="preload" as="image" href="assets/img/kv_title_9x16.webp" media="(max-width:959px)">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/theme.css">
 </head>
 <body data-font="m">
 <a class="skip" href="#puzzle">いまの謎へ移動</a>
 
 <!-- タイトル -->
 <section id="screen-title" class="screen" aria-labelledby="title-h">
+  <picture class="title-kv" aria-hidden="true">
+    <source media="(min-width:960px)" srcset="assets/img/kv_title_16x9.webp">
+    <img src="assets/img/kv_title_9x16.webp" alt="" fetchpriority="high">
+  </picture>
+  <img class="title-posi" src="assets/img/posi_peek.webp" alt="" aria-hidden="true">
   <div class="title-inner">
+    <p class="title-case" aria-hidden="true">CASE No. 2027-0115</p>
     <p class="title-kicker">那珂湊・潮見写真館殺人事件</p>
     <h1 id="title-h">十九年目のネガ</h1>
     <p class="title-lead">古い写真館で、店主が死んだ。第一発見者は、新米刑事・風見莉々香の姉。捜査から外された莉々香から、あなたにロックのかかった資料が届く。</p>
@@ -22,7 +36,7 @@
       <button type="button" id="btn-new" class="btn primary">はじめる</button>
       <button type="button" id="btn-new2" class="btn ghost" hidden>はじめから</button>
     </div>
-    <p class="title-note">全8章（プロローグ＋S1〜S6＋大謎）・遊ぶ時間のめやす 約3時間（謎解きに慣れた人で2時間半ほど）。各章の謎は、資料を自分で読み解いて最後に1回で答える形です。途中でやめても自動で保存され、続きから遊べます。スマホを縦に持って、片手で遊べます。<br>暴力・死・家族の秘密の描写があります。大きな音や急な画像はありません。</p>
+    <p class="title-note">全8章（プロローグ＋S1〜S6＋大謎）・遊ぶ時間のめやす 約3時間（謎解きに慣れた人で2時間半ほど）。途中に動画パートと、暗室のミニゲームがあります。各章の謎は、資料を自分で読み解いて最後に1回で答える形です。途中でやめても自動で保存され、続きから遊べます。スマホを縦に持って、片手で遊べます。<br>暴力・死・家族の秘密の描写があります。大きな音や急な画像はありません。</p>
   </div>
 </section>
 
@@ -124,6 +138,8 @@
 <script src="js/content3.js"></script>
 <script src="js/answers.js"></script>
 <script src="js/tools.js"></script>
+<script src="assets/video/manifest.js"></script>
+<script src="js/play.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
