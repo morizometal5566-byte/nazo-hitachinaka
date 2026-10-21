@@ -538,10 +538,13 @@
         }
         svg.dataset.init = '1';
       }
+      const fl = !!S.fold[doc.dataset.foldDoc + ':flip'];
+      const mir = $('svg.svg-letter g.mir', doc); if (mir) { if (fl) mir.setAttribute('transform', 'translate(400 0) scale(-1 1)'); else mir.removeAttribute('transform'); }
+      const fb = $('[data-act="lflip"]', doc); if (fb) { fb.setAttribute('aria-pressed', String(fl)); fb.textContent = fl ? '⇋ 表にもどす' : '⇋ 裏返す'; }
       const b = $('[data-act="fold"]', doc); if (b) { b.setAttribute('aria-pressed', String(f)); b.textContent = f ? '↺ 手紙をひらく' : '✂ 点線で折る'; }
       const help = $('.fold-help', doc); if (help) help.textContent = f ? 'ひらくと、地図が見えます' : '点線を下へスワイプしても折れます';
       const h = $('.fold-handle', doc); if (h) h.setAttribute('aria-label', f ? '手紙をひらく' : '点線で折る');
-      const live = $('.fold-live', doc); if (live) live.textContent = f ? '手紙を折りました。穴から下の字が見えています。穴のそばに数字があります。' : '';
+      const live = $('.fold-live', doc); if (live) live.textContent = (f ? '手紙を折りました。穴から下の字が見えています。穴のそばに漢字があります。' : '') + (fl ? '（手紙は裏返し）' : '');
     });
   }
   function setFold(id, v) {
@@ -554,6 +557,8 @@
     if (b && p && p.needFold && S.fold['0-1']) b.remove();
   }
   document.addEventListener('click', (e) => {
+    const lf = e.target.closest('[data-act="lflip"]');
+    if (lf) { const id = lf.closest('[data-fold-doc]').dataset.foldDoc; S.fold[id + ':flip'] = !S.fold[id + ':flip']; save(); applyFolds(); return; }
     const b = e.target.closest('[data-act="fold"]');
     if (!b) return;
     const id = b.closest('[data-fold-doc]').dataset.foldDoc;

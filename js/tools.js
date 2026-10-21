@@ -18,7 +18,7 @@
   function ovSnapped(fig, o) {
     const sn = J(fig, 'snap');
     const rr = ((o.r % 360) + 360) % 360;
-    return Math.abs(o.x - sn.x) <= sn.tol && Math.abs(o.y - sn.y) <= sn.tol && (sn.rs ? sn.rs.includes(rr) : rr === sn.r) && !!o.f === !!sn.f;
+    return Math.abs(o.x - sn.x) <= sn.tol && Math.abs(o.y - sn.y) <= sn.tol && (sn.rs ? sn.rs.includes(rr) : rr === sn.r) && (sn.fs || !!o.f === !!sn.f);
   }
   function ovApply(fig) {
     const o = ovState(fig);
