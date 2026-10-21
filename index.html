@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#17191d">
+<title>十九年目のネガ ― 体験版（S0・S1）</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-font="m">
+<a class="skip" href="#puzzle">いまの謎へ移動</a>
+
+<!-- タイトル -->
+<section id="screen-title" class="screen" aria-labelledby="title-h">
+  <div class="title-inner">
+    <p class="title-kicker">那珂湊・潮見写真館殺人事件</p>
+    <h1 id="title-h">十九年目のネガ</h1>
+    <p class="title-lead">古い写真館で、店主が死んだ。第一発見者は、新米刑事・風見莉々香の姉。捜査から外された莉々香から、あなたにロックのかかった資料が届く。</p>
+    <div class="title-btns">
+      <button type="button" id="btn-continue" class="btn primary" hidden>続きから</button>
+      <button type="button" id="btn-new" class="btn primary">はじめる</button>
+      <button type="button" id="btn-new2" class="btn ghost" hidden>はじめから</button>
+    </div>
+    <p class="title-note">体験版：S0・S1（約30分）。スマホを縦に持って、片手で遊べます。進み具合は自動で保存。<br>暴力・死の描写があります。大きな音や急な画像はありません。</p>
+  </div>
+</section>
+
+<!-- メイン画面（上：見出し／まんなか：物語・資料・謎／下：答える） -->
+<section id="screen-game" class="screen app" hidden>
+  <div class="col-main" id="col-main">
+    <header class="topbar">
+      <div class="tb-title"><span id="stage-label" class="tb-stage"></span><span id="objective-text" class="tb-obj"></span></div>
+      <button type="button" id="btn-menu" class="iconbtn" aria-haspopup="dialog" aria-label="メニュー（ヒント・メモ・前の資料・設定）"><span aria-hidden="true">☰</span></button>
+    </header>
+    <div id="peek-slot-main" class="peek-slot"></div>
+    <main class="scroll" id="scroll">
+      <section class="feed" aria-label="莉々香からのメッセージ">
+        <button type="button" id="btn-older" class="older" hidden></button>
+        <ol id="feed-old" class="msgs" hidden></ol>
+        <ol id="feed" class="msgs" aria-live="polite"></ol>
+      </section>
+      <section class="cards-sec" aria-labelledby="cards-h">
+        <h2 id="cards-h" class="sec-h">資料 <span id="cards-count"></span></h2>
+        <ul id="cards" class="cards"></ul>
+      </section>
+      <section id="puzzle" class="puzzle" tabindex="-1" aria-labelledby="pz-name"></section>
+    </main>
+    <nav class="bottombar" aria-label="操作">
+      <button type="button" id="bb-hint" class="bb-btn" data-menu="hint"><span aria-hidden="true">💡</span><span class="bb-t">ヒント</span></button>
+      <button type="button" id="bb-peek" class="bb-btn" hidden aria-pressed="false"><span aria-hidden="true">📌</span><span class="bb-t" id="bb-peek-t">ちら見</span></button>
+      <button type="button" id="bb-main" class="bb-main btn primary">答える</button>
+    </nav>
+  </div>
+
+  <aside class="col-view" id="viewer" aria-label="資料ビューア">
+    <div class="vw-head">
+      <h2 id="vw-title" class="vw-title"></h2>
+      <button type="button" id="btn-compare" class="btn ghost sm vw-compare" aria-pressed="false">⇆ 並べて見る</button>
+    </div>
+    <div id="peek-slot-viewer" class="peek-slot"></div>
+    <div id="panes" class="panes"></div>
+    <div class="vw-bar">
+      <button type="button" id="btn-viewer-close" class="vb-btn vw-close">← もどる</button>
+      <button type="button" id="btn-pin" class="vb-btn" aria-pressed="false"><span aria-hidden="true">📌</span><span class="vb-t" id="btn-pin-t">ピン</span></button>
+      <button type="button" id="btn-vpeek" class="vb-btn" hidden aria-pressed="false">⧉ ちら見</button>
+      <button type="button" id="btn-zcycle" class="vb-btn zcycle" aria-label="拡大を切り替える（100%→150%→200%）">🔍 <span class="zc-v">100%</span></button>
+      <div class="zoom" role="group" aria-label="拡大と縮小"><button type="button" class="zbtn" data-z="-" aria-label="縮小">−</button><span class="zval" aria-live="polite">100%</span><button type="button" class="zbtn" data-z="+" aria-label="拡大">＋</button></div>
+    </div>
+  </aside>
+</section>
+
+<!-- ちら見（ピン留めした資料を、いまの画面の上半分にちらっと出す） -->
+<section id="peek" class="peek" hidden aria-label="ピン留めした資料">
+  <div class="peek-head"><span id="peek-title" class="peek-title"></span><button type="button" id="peek-unpin" class="iconbtn sm" aria-label="ピンを外す">📌✕</button><button type="button" id="peek-close" class="iconbtn sm" aria-label="ちら見を閉じる">✕</button></div>
+  <div id="peek-body" class="peek-body" tabindex="0"></div>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<!-- メニュー（ヒント・メモ・前の資料・設定を1つに） -->
+<dialog id="dlg-menu" class="sheet" aria-labelledby="menu-h">
+  <div class="sheet-head">
+    <h2 id="menu-h">メニュー</h2>
+    <button type="button" class="iconbtn" data-close aria-label="閉じる">✕</button>
+  </div>
+  <div class="tabs" role="tablist" aria-label="メニューの中身">
+    <button type="button" role="tab" id="mt-hint" aria-controls="mp-hint" data-tab="hint">💡 ヒント</button>
+    <button type="button" role="tab" id="mt-memo" aria-controls="mp-memo" data-tab="memo">📝 メモ</button>
+    <button type="button" role="tab" id="mt-archive" aria-controls="mp-archive" data-tab="archive">🗂 前の資料</button>
+    <button type="button" role="tab" id="mt-settings" aria-controls="mp-settings" data-tab="settings">⚙ 設定</button>
+  </div>
+  <div class="tabpanels">
+    <section role="tabpanel" id="mp-hint" aria-labelledby="mt-hint"><div id="hint-box"></div></section>
+    <section role="tabpanel" id="mp-memo" aria-labelledby="mt-memo" hidden>
+      <label for="memo" class="sr-only">メモ</label>
+      <textarea id="memo" rows="8" placeholder="気づいたことを書いておけます（自動で保存）"></textarea>
+      <div class="memo-foot"><span id="memo-saved" aria-live="polite"></span><span id="memo-count"></span></div>
+    </section>
+    <section role="tabpanel" id="mp-archive" aria-labelledby="mt-archive" hidden><ul id="archive-list" class="archive"></ul></section>
+    <section role="tabpanel" id="mp-settings" aria-labelledby="mt-settings" hidden>
+      <fieldset class="set"><legend>文字の大きさ</legend>
+        <label><input type="radio" name="font" value="m"> ふつう</label>
+        <label><input type="radio" name="font" value="l"> 大きい</label>
+        <label><input type="radio" name="font" value="xl"> とても大きい</label>
+      </fieldset>
+      <label class="set-row"><input type="checkbox" id="set-contrast"> ハイコントラスト</label>
+      <label class="set-row"><input type="checkbox" id="set-motion"> 動きを減らす</label>
+      <p class="set-help">拡大：指2本でピンチ／ダブルタップ／＋−ボタン。PCは Ctrl＋ホイール、＋−キー、0キーで100%。</p>
+      <button type="button" id="btn-reset" class="btn danger">最初からやり直す</button>
+    </section>
+  </div>
+</dialog>
+
+<dialog id="dlg-confirm" class="confirm" aria-labelledby="cf-msg">
+  <p id="cf-msg"></p>
+  <div class="cf-btns"><button type="button" id="cf-no" class="btn ghost">やめておく</button><button type="button" id="cf-yes" class="btn primary">見る</button></div>
+</dialog>
+
+<script src="js/content.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
