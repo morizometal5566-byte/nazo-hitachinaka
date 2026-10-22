@@ -500,3 +500,52 @@ body.cb .cbl{display:inline}
 figure.ov[data-ov="6-4s"] .ov-sheet rect[mask]{transition:fill .3s ease .25s}
 figure.ov[data-ov="6-4s"].is-flipped .ov-sheet rect[mask]{fill:#fffdf7}
 figure.ov[data-ov="6-4s"].is-flipped .ov-sheet text{opacity:.45}
+
+/* ===== v8.2：手紙ビューアを大きく（道具は下のバーに。拡大しない） ===== */
+.letter-doc .fold-bar{position:static;margin:0;padding:0;border:0;background:none}
+.pane-dock{flex:none;display:block;margin:0;padding:6px max(8px,var(--sal)) 6px;background:#23262c;border-top:1px solid #444}
+.pane-dock .fb-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.pane-dock .fold-state{flex:none;margin:0}
+.pane-dock .fs-chip{margin:0}
+.pane-dock .tool{min-height:44px;padding:.1em .8em;font-size:.95rem}
+.pane-dock .tool.big{flex:0 1 auto;min-height:44px;font-size:.95rem}
+.pane-dock .fb-more-btn{margin-left:auto;color:#eee;border-color:#888}
+.pane-dock .fb-more{max-height:42vh;overflow:auto;padding-top:6px}
+.pane-dock .fs-t{margin:0 0 6px;font-size:.86rem;line-height:1.5;color:#e9e2d2}
+.pane-dock .fold-help{margin:4px 0 0;font-size:.8rem;color:#cfc7b6}
+.pane-dock .fold-diagram{max-width:380px}
+@media (max-width:899px){
+  .pane-scroll{padding:4px}
+  .letter-doc{padding:2px}
+  .doc{margin-left:0;margin-right:0}
+}
+/* 答えとメモの引き出し（スマホのビューア） */
+.drawer{flex:none;display:flex;flex-direction:column;max-height:min(52%,calc(var(--app-h,100dvh) * .52));background:var(--bg);border-top:3px solid var(--accent);border-radius:14px 14px 0 0;box-shadow:0 -6px 18px rgba(0,0,0,.45)}
+.drawer[hidden]{display:none}
+.dw-head{flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px 4px 10px}
+.dw-tabs{display:flex;gap:6px;flex:1}
+.dw-tabs [role=tab]{min-height:40px;padding:0 .9em;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:700}
+.dw-tabs [aria-selected="true"]{border-color:var(--accent);color:var(--accent)}
+.dw-body{flex:1;min-height:0;overflow:auto;padding:0 10px 6px;overscroll-behavior:contain}
+.dw-body .puzzle{margin:0;padding:0}
+.dw-body .facts{display:none}
+.dw-body #memo2{width:100%;min-height:9em;font:inherit;background:#15171b;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px}
+.dw-foot{flex:none;padding:6px 10px calc(6px + var(--sab,0px));border-top:1px solid var(--line)}
+.dw-foot[hidden]{display:none}
+.dw-foot .btn{width:100%;min-height:46px}
+body.drawer-open .vw-bar{padding-bottom:8px}
+.vb-drawer{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.vb-drawer[aria-expanded="true"]{background:var(--panel);color:var(--accent)}
+@media (min-width:900px){ #btn-drawer,.drawer{display:none!important} }
+@media (max-width:380px){ .vb-btn{padding:0 .5em} }
+.sr-text.sr-only{margin:0}
+.pane-dock .fb-row{flex-wrap:nowrap}
+.pane-dock .fs-chip{white-space:nowrap;font-size:.82rem;padding:.05em .55em}
+.pane-dock .tool,.pane-dock .tool.big{white-space:nowrap;padding:.1em .7em}
+.pane-dock .fb-more-btn{min-width:44px;padding:0}
+.drawer{max-height:min(48%,calc(var(--app-h,100dvh) * .48))}
+.dw-body .pz-card{padding:10px 12px;margin:0}
+.dw-body .pz-kind{display:none}
+.dw-body .pz-name{font-size:1.02rem;margin:0 0 4px}
+.dw-body .pz-q{margin:0 0 6px;font-size:.92rem}
+.dw-foot .btn{min-height:42px}

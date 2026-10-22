@@ -307,7 +307,7 @@
     $('#bb-hint .bb-t').textContent = p ? `ヒント ${S.hints[p.id] || 0}/3` : 'ヒント';
     const pk = $('#bb-peek');
     pk.hidden = !S.pin;
-    if (S.pin) { $('#bb-peek-t').textContent = `${S.pin} ちら見`; pk.setAttribute('aria-pressed', String(!!S.peek)); pk.setAttribute('aria-label', `ピン留めした資料 ${S.pin} をちら見${S.peek ? '（表示中）' : ''}`); }
+    if (S.pin) { $('#bb-peek-t').textContent = `${S.pin} を見る`; pk.setAttribute('aria-label', `ピン留めした資料 ${S.pin} を大きくひらく`); }
   }
   function formVisible() {
     const f = $('#pz-form'), sc = $('#scroll');
@@ -367,6 +367,7 @@
     else S.step += 1;
     save();
     setTimeout(() => {
+      if (drawerOpen()) { closeDrawer(); closeViewer(false); } // 正解したら、物語のつづきへ
       if (lastInStage) {
         if (isClear()) { deliver(chatKey, () => setTimeout(renderPuzzle, 0)); renderAll(); return; }
         renderAll();
@@ -397,7 +398,15 @@
   /* ================= ビューア ================= */
   function paneCount() { return S.view.compare && !isPhone() ? 2 : 1; }
   function activePane() { return paneCount() === 2 ? S.view.active : 0; }
+  const docView = {}; // 資料ごとの拡大率とスクロール位置（切り替えても戻ってこられる）
+  function rememberView() {
+    $$('#panes .pane').forEach((el) => {
+      const pn = S.view.panes[+el.dataset.pane]; const sc = $('.pane-scroll', el);
+      if (pn && pn.doc && sc && el.dataset.doc === pn.doc) docView[pn.doc] = { z: pn.zoom, t: sc.scrollTop, l: sc.scrollLeft };
+    });
+  }
   function renderPanes() {
+    rememberView();
     const wrap = $('#panes');
     const n = paneCount();
     wrap.classList.toggle('two', n === 2);
@@ -408,13 +417,19 @@
       const pn = S.view.panes[i];
       const d = pn.doc && DOCS[pn.doc];
       const opts = unlockedDocs().map((id) => `<option value="${id}"${id === pn.doc ? ' selected' : ''}>${id} ${esc(DOCS[id].title)}</option>`).join('');
-      html += `<section class="pane${n === 2 && S.view.active === i ? ' active' : ''}" data-pane="${i}" aria-label="${n === 2 ? (i ? '右' : '左') + 'の資料' : '資料'}">
+      html += `<section class="pane${n === 2 && S.view.active === i ? ' active' : ''}" data-pane="${i}" data-doc="${pn.doc || ''}" aria-label="${n === 2 ? (i ? '右' : '左') + 'の資料' : '資料'}">
         ${n === 2 ? `<div class="pane-head"><label class="sr-only" for="sel-${i}">表示する資料</label><select id="sel-${i}" class="pane-sel"><option value="">資料を選ぶ</option>${opts}</select></div>` : ''}
         <div class="pane-scroll" tabindex="0" aria-label="資料の本文。＋−キーで拡大縮小">${d ? `<div class="doc-zoom" style="zoom:${pn.zoom}">${rereadOn() && d.re ? `<p class="re-note"><b>🔁 読み返し</b>${esc(d.re)}</p>` : ''}${d.html()}</div>` : '<p class="pane-empty">資料カードを選ぶと、ここに表示されます。</p>'}</div>
       </section>`;
     }
     wrap.innerHTML = html;
+    // 手紙の道具（折る・裏返す・図）は、拡大しない下の道具バーへ。シートは画面いっぱいに使う
+    $$('.pane', wrap).forEach((el) => { const bar = $('.doc-zoom .fold-bar', el); if (bar) { bar.classList.add('pane-dock'); el.appendChild(bar); } });
     $$('.pane', wrap).forEach(bindPane);
+    $$('.pane', wrap).forEach((el) => {
+      const pn = S.view.panes[+el.dataset.pane]; const v = pn && docView[pn.doc]; const sc = $('.pane-scroll', el);
+      if (v && sc) { sc.scrollTop = v.t; sc.scrollLeft = v.l; requestAnimationFrame(() => { sc.scrollTop = v.t; sc.scrollLeft = v.l; }); }
+    });
     renderViewerBar();
     applyPhotos(); applyFolds(); window.TOOLS.apply(wrap);
   }
@@ -430,8 +445,10 @@
     $('#btn-pin-t').textContent = pinned ? 'ピン中' : 'ピン';
     pin.setAttribute('aria-label', pinned ? `${pn.doc} のピンを外す` : `${pn.doc || ''} をピン留め（ほかの画面でちら見できる）`);
     const vp = $('#btn-vpeek');
-    vp.hidden = !(S.pin && d && S.pin !== pn.doc);
-    if (!vp.hidden) { vp.textContent = `⧉ ${S.pin}`; vp.setAttribute('aria-pressed', String(!!S.peek)); vp.setAttribute('aria-label', `ピン留めした ${S.pin} をちら見`); }
+    const target = !S.pin || !d ? null : S.pin !== pn.doc ? S.pin : (S.view.back && S.view.back !== S.pin && DOCS[S.view.back] ? S.view.back : null);
+    vp.hidden = !target;
+    if (target) { vp.dataset.target = target; vp.textContent = `⇄ ${target === S.pin ? '📌' : ''}${target}`; vp.setAttribute('aria-label', `${target} ${DOCS[target].title} に切り替える（拡大とスクロールはそのまま）`); }
+    const dw = $('#btn-drawer'); if (dw) { dw.hidden = !isPhone() || isClear() || !d; dw.setAttribute('aria-expanded', String(drawerOpen())); dw.textContent = drawerOpen() ? '▾ しまう' : '✏ 答え'; }
   }
   function setZoom(i, z) {
     const pn = S.view.panes[i];
@@ -455,13 +472,30 @@
       else if (e.key === '-' || e.key === '_') { e.preventDefault(); setZoom(i, S.view.panes[i].zoom - 0.25); }
       else if (e.key === '0') { e.preventDefault(); setZoom(i, 1); }
     });
-    sc.addEventListener('dblclick', (e) => { if (e.target.closest('button,.fold-handle,a,input,select,summary,label')) return; setZoom(i, S.view.panes[i].zoom >= 1.5 ? 1 : 2); });
-    // ピンチ（2本指）
-    const pts = new Map(); let startD = 0, startZ = 1;
+    const NOZOOM = 'button,.fold-handle,a,input,select,summary,label,textarea,.ov-sheet,.trace svg,[role="slider"],input[type=range]';
+    // 指の位置（または点）を中心に拡大する
+    const zoomAt = (z, cx, cy) => {
+      const r = sc.getBoundingClientRect(); const z0 = S.view.panes[i].zoom;
+      const px = (sc.scrollLeft + cx - r.left) / z0, py = (sc.scrollTop + cy - r.top) / z0;
+      setZoom(i, z); const z1 = S.view.panes[i].zoom;
+      sc.scrollLeft = px * z1 - (cx - r.left); sc.scrollTop = py * z1 - (cy - r.top);
+    };
+    let lastTouch = 0;
+    sc.addEventListener('dblclick', (e) => { if (Date.now() - lastTouch < 900) return; if (e.target.closest(NOZOOM)) return; zoomAt(S.view.panes[i].zoom >= 1.5 ? 1 : 2, e.clientX, e.clientY); });
+    // ピンチ（2本指）とダブルタップ
+    const pts = new Map(); let startD = 0, startZ = 1, tap = null, moved = false;
     const dist = () => { const a = [...pts.values()]; return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
-    sc.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'touch') return; pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pts.size === 2) { startD = dist(); startZ = S.view.panes[i].zoom; } });
-    sc.addEventListener('pointermove', (e) => { if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pts.size === 2 && startD > 0) setZoom(i, startZ * dist() / startD); });
-    const up = (e) => { pts.delete(e.pointerId); if (pts.size < 2) startD = 0; };
+    const mid = () => { const a = [...pts.values()]; return [(a[0].x + a[1].x) / 2, (a[0].y + a[1].y) / 2]; };
+    sc.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'touch') return; lastTouch = Date.now(); pts.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY }); moved = pts.size > 1; if (pts.size === 2) { startD = dist(); startZ = S.view.panes[i].zoom; } });
+    sc.addEventListener('pointermove', (e) => { if (!pts.has(e.pointerId)) return; const q = pts.get(e.pointerId); q.x = e.clientX; q.y = e.clientY; if (Math.hypot(q.x - q.x0, q.y - q.y0) > 10) moved = true; if (pts.size === 2 && startD > 0) { const [mx, my] = mid(); zoomAt(startZ * dist() / startD, mx, my); } });
+    const up = (e) => {
+      if (e.type === 'pointerup' && e.pointerType === 'touch' && pts.size === 1 && !moved && !e.target.closest(NOZOOM)) {
+        const now = Date.now();
+        if (tap && now - tap.t < 320 && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 30) { zoomAt(S.view.panes[i].zoom >= 1.5 ? 1 : 2, e.clientX, e.clientY); tap = null; }
+        else tap = { t: now, x: e.clientX, y: e.clientY };
+      }
+      pts.delete(e.pointerId); if (pts.size < 2) startD = 0;
+    };
     sc.addEventListener('pointerup', up); sc.addEventListener('pointercancel', up);
   }
   function markRead(id) { if (!S.read.includes(id)) S.read.push(id); }
@@ -469,7 +503,7 @@
     if (!DOCS[id] || !unlockedDocs().includes(id)) return;
     const v = S.view;
     const i = activePane();
-    if (v.panes[i].doc !== id) { v.panes[i].doc = id; v.panes[i].zoom = 1; }
+    if (v.panes[i].doc !== id) { rememberView(); v.panes[i].doc = id; v.panes[i].zoom = docView[id] ? docView[id].z : 1; }
     markRead(id); save();
     renderPanes(); renderCards();
     if (isPhone()) {
@@ -485,9 +519,35 @@
     }
     renderPeek();
   }
+  /* ================= 答えとメモの引き出し（スマホのビューアの下から。シートはそのまま） ================= */
+  let pzHome = null;
+  const drawerOpen = () => !$('#drawer').hidden;
+  function drawerTab(t) {
+    $$('#drawer [data-dw]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.dw === t)));
+    $('#dw-pz').hidden = t !== 'pz'; $('#dw-memo').hidden = t !== 'memo'; $('#dw-foot').hidden = t !== 'pz';
+    if (t === 'memo') $('#memo2').value = S.memo;
+  }
+  function openDrawer(tab) {
+    if (drawerOpen()) { drawerTab(tab || 'pz'); return; }
+    const pz = $('#puzzle');
+    if (!pzHome) { pzHome = document.createComment('puzzle-home'); pz.before(pzHome); }
+    $('#dw-pz').appendChild(pz);
+    $('#drawer').hidden = false; document.body.classList.add('drawer-open');
+    drawerTab(tab || 'pz'); renderViewerBar();
+    const card = $('#dw-pz .pz-card'); if (card) card.scrollIntoView({ block: 'start' });
+  }
+  function closeDrawer() {
+    if (!drawerOpen()) return;
+    if (pzHome) { pzHome.replaceWith($('#puzzle')); pzHome = null; }
+    $('#drawer').hidden = true; document.body.classList.remove('drawer-open');
+    if (document.activeElement && document.activeElement.blur && $('#viewer').contains(document.activeElement) === false) document.activeElement.blur();
+    renderViewerBar();
+  }
   let pendingBack = false, wantPush = false;
   function closeViewer(fromPop) {
+    closeDrawer();
     if (!viewerOpen()) return;
+    rememberView();
     document.body.classList.remove('viewer-open');
     if (!fromPop && history.state && history.state.vw) { pendingBack = true; try { history.back(); } catch (e) { pendingBack = false; } }
     renderPeek();
@@ -500,26 +560,17 @@
   function setPin(id) {
     S.pin = id; S.peek = false; save();
     renderViewerBar(); renderBottom(); renderCards(); renderPeek();
-    if (id) toast(`📌 ${id} をピン留め。ほかの画面で「ちら見」できます`, null, 2500);
+    if (id) toast(`📌 ${id} をピン留め。ほかの資料から「⇄」ですぐ切り替えられます`, null, 2500);
   }
-  function togglePeek(v) {
+  // ピン留めした資料は、小さな窓ではなく、大きなビューアでひらく（⇄ で行き来できる）
+  function openPinned() {
     { const t = $('#toast'); if (t) t.hidden = true; }
-    S.peek = typeof v === 'boolean' ? v : !S.peek; save();
-    renderPeek(); renderBottom(); renderViewerBar();
+    if (!S.pin) return;
+    const cur = S.view.panes[activePane()].doc;
+    if (cur && cur !== S.pin) S.view.back = cur;
+    openDoc(S.pin);
   }
-  function renderPeek() {
-    const pk = $('#peek');
-    const curViewerDoc = S.view.panes[activePane()].doc;
-    const inViewer = isPhone() && viewerOpen();
-    const show = !!(S.pin && S.peek && DOCS[S.pin] && !(inViewer && curViewerDoc === S.pin));
-    document.body.classList.toggle('peek-open', show);
-    if (!show) { pk.hidden = true; return; }
-    const slot = inViewer ? $('#peek-slot-viewer') : $('#peek-slot-main');
-    if (pk.parentElement !== slot) slot.appendChild(pk);
-    if (pk.dataset.doc !== S.pin) { $('#peek-body').innerHTML = `<div class="doc-zoom">${DOCS[S.pin].html()}</div>`; pk.dataset.doc = S.pin; applyPhotos(); applyFolds(); window.TOOLS.apply($('#peek-body')); }
-    $('#peek-title').textContent = `📌 ${S.pin} ${DOCS[S.pin].title}`;
-    pk.hidden = false;
-  }
+  function renderPeek() { const pk = $('#peek'); if (pk) pk.hidden = true; document.body.classList.remove('peek-open'); }
 
   /* ================= 写真の道具（回す・反転） ================= */
   function phLabel(st) {
@@ -551,9 +602,13 @@
 
   /* ================= 折る（穴あき手紙） ================= */
   function applyFolds() {
-    $$('[data-fold-doc]').forEach((doc) => {
+    $$('[data-fold-doc]').forEach((doc0) => {
+      const fid = doc0.dataset.foldDoc;
+      const bars = $$(`[data-fold-bar="${fid}"]`);
+      // 道具は、拡大しない「下の道具バー」に移していることがある。手紙本体と道具バーの両方から探す
+      const doc = { querySelector: (q) => doc0.querySelector(q) || bars.map((b) => b.querySelector(q)).find(Boolean) || null, dataset: doc0.dataset };
       const f = !!S.fold[doc.dataset.foldDoc];
-      const svg = $('svg.svg-letter', doc), wrap = $('.letter-wrap', doc);
+      const svg = doc.querySelector('svg.svg-letter'), wrap = doc.querySelector('.letter-wrap');
       if (svg) {
         clearTimeout(svg._t);
         if (f) {
@@ -568,21 +623,21 @@
         svg.dataset.init = '1';
       }
       const fl = f && !!S.fold[doc.dataset.foldDoc + ':flip'];
-      const mir = $('svg.svg-letter g.mir', doc); if (mir) { mir.removeAttribute('transform'); mir.style.transform = fl ? 'scaleX(-1)' : ''; }
+      const mir = doc.querySelector('svg.svg-letter g.mir'); if (mir) { mir.removeAttribute('transform'); mir.style.transform = fl ? 'scaleX(-1)' : ''; }
       if (svg) svg.classList.toggle('is-flipped', fl);
-      const fb = $('[data-act="lflip"]', doc); if (fb) { fb.setAttribute('aria-pressed', String(fl)); fb.textContent = fl ? '⇋ 表にもどす（折ったまま）' : '⇋ 切り取って裏返す（裏）'; }
-      const b = $('[data-act="fold"]', doc); if (b) { b.setAttribute('aria-pressed', String(f)); b.textContent = f ? '↺ 手紙をひらく' : '✂ 点線で折る（表）'; }
-      const fsEl = $('.fold-state', doc);
+      const fb = doc.querySelector('[data-act="lflip"]'); if (fb) { fb.setAttribute('aria-pressed', String(fl)); fb.textContent = fl ? '⇋ 表にもどす' : '⇋ 裏返す'; fb.setAttribute('aria-label', fl ? '裏返した紙を表にもどす（折ったまま）' : '上半分を切り取って、その紙だけ裏返す'); }
+      const b = doc.querySelector('[data-act="fold"]'); if (b) { b.setAttribute('aria-pressed', String(f)); b.textContent = f ? '↺ ひらく' : '✂ 折る'; }
+      const fsEl = doc.querySelector('.fold-state');
       if (fsEl) {
         const k = !f ? 'open' : fl ? 'ura' : 'omote';
         fsEl.dataset.state = k;
-        $('.fs-chip', fsEl).textContent = { open: 'いま：ひらいた手紙', omote: 'いま：表', ura: 'いま：裏' }[k];
-        $('.fs-t', fsEl).textContent = { open: '上が手紙、下があんごう表と地図。', omote: '上半分を点線で下へ折って、あんごう表に重ねた。見えているのは、えんぴつの字の面。', ura: '上半分を点線で切り取り、その紙だけ左右に裏返して重ねた。見えているのは手紙の文の面（逆さま）。えんぴつの字は、紙の裏から透けて左右反対。' }[k];
-        const dg = $('.fold-diagram', doc); if (dg) dg.dataset.state = k;
+        fsEl.querySelector('.fs-chip').textContent = { open: 'いま：ひらいた手紙', omote: 'いま：表', ura: 'いま：裏' }[k];
+        { const ft = doc.querySelector('.fs-t'); if (ft) ft.textContent = { open: '上が手紙、下があんごう表と地図。', omote: '上半分を点線で下へ折って、あんごう表に重ねた。見えているのは、えんぴつの字の面。', ura: '上半分を点線で切り取り、その紙だけ左右に裏返して重ねた。見えているのは手紙の文の面（逆さま）。えんぴつの字は、紙の裏から透けて左右反対。' }[k]; }
+        const dg = doc.querySelector('.fold-diagram'); if (dg) dg.dataset.state = k;
       }
-      const help = $('.fold-help', doc); if (help) help.textContent = f ? 'ひらくと、地図が見えます' : '点線を下へスワイプしても折れます';
-      const h = $('.fold-handle', doc); if (h) h.setAttribute('aria-label', f ? '手紙をひらく' : '点線で折る');
-      const live = $('.fold-live', doc); if (live) live.textContent = f ? (fl ? '上半分を切り取って裏返し、重ねました（裏）。' : '上半分を折って重ねました（表）。') + '穴から下の字が見えています。穴のそばに漢字があります。' : '';
+      const help = doc.querySelector('.fold-help'); if (help) help.textContent = f ? 'ひらくと、地図が見えます' : '点線を下へスワイプしても折れます';
+      const h = doc.querySelector('.fold-handle'); if (h) h.setAttribute('aria-label', f ? '手紙をひらく' : '点線で折る');
+      const live = doc.querySelector('.fold-live'); if (live) live.textContent = f ? (fl ? '上半分を切り取って裏返し、重ねました（裏）。' : '上半分を折って重ねました（表）。') + '穴から下の字が見えています。穴のそばに漢字があります。' : '';
     });
   }
   function setFold(id, v) {
@@ -597,13 +652,15 @@
   document.addEventListener('click', (e) => {
     const lf = e.target.closest('[data-act="lflip"]');
     if (lf) { // 裏返すのは、切り取った上半分だけ。ひらいたままなら、先に重ねる
-      const id = lf.closest('[data-fold-doc]').dataset.foldDoc;
+      const host = lf.closest('[data-fold-doc],[data-fold-bar]'); const id = host.dataset.foldDoc || host.dataset.foldBar;
       if (!S.fold[id]) { S.fold[id + ':flip'] = true; setFold(id, true); return; }
       S.fold[id + ':flip'] = !S.fold[id + ':flip']; save(); applyFolds(); return;
     }
+    const dg = e.target.closest('[data-act="fdiag"]');
+    if (dg) { const more = dg.closest('.fold-bar').querySelector('.fb-more'); more.hidden = !more.hidden; dg.setAttribute('aria-expanded', String(!more.hidden)); return; }
     const b = e.target.closest('[data-act="fold"]');
     if (!b) return;
-    const id = b.closest('[data-fold-doc]').dataset.foldDoc;
+    const host = b.closest('[data-fold-doc],[data-fold-bar]'); const id = host.dataset.foldDoc || host.dataset.foldBar;
     setFold(id, !S.fold[id]);
   });
   let drag = null;
@@ -764,10 +821,13 @@
     $('#scroll').addEventListener('scroll', () => { clearTimeout(bbT); bbT = setTimeout(updateMainLabel, 80); }, { passive: true });
     $('#scroll').addEventListener('scroll', () => { if (!$('#new-badge').hidden && nearBottom()) { newBadge(false); quietFeed = false; } }, { passive: true });
     $('#new-badge').addEventListener('click', () => { quietFeed = false; newBadge(false); const l = $('#feed').lastElementChild; if (l) l.scrollIntoView({ block: 'end', behavior: reduced() ? 'auto' : 'smooth' }); });
-    $('#bb-peek').onclick = () => togglePeek();
-    $('#btn-vpeek').onclick = () => togglePeek();
-    $('#peek-close').onclick = () => togglePeek(false);
-    $('#peek-unpin').onclick = () => setPin(null);
+    $('#bb-peek').onclick = () => openPinned();
+    $('#btn-vpeek').onclick = () => { const t = $('#btn-vpeek').dataset.target; const cur = S.view.panes[activePane()].doc; if (!t) return; S.view.back = cur; openDoc(t); };
+    $('#btn-drawer').onclick = () => (drawerOpen() ? closeDrawer() : openDrawer());
+    $('#dw-close').onclick = () => closeDrawer();
+    $$('#drawer [data-dw]').forEach((b) => b.onclick = () => drawerTab(b.dataset.dw));
+    $('#dw-submit').onclick = () => { const f = $('#pz-form'); if (f) f.requestSubmit ? f.requestSubmit() : f.dispatchEvent(new Event('submit', { cancelable: true })); };
+    $('#memo2').addEventListener('input', () => { S.memo = $('#memo2').value; clearTimeout(memoTimer); memoTimer = setTimeout(save, 400); });
     $('#btn-pin').onclick = () => { const id = S.view.panes[activePane()].doc; if (!id) return; setPin(S.pin === id ? null : id); };
     $('#btn-zcycle').onclick = () => { const i = activePane(), z = S.view.panes[i].zoom; setZoom(i, z < 1.45 ? 1.5 : z < 1.95 ? 2 : 1); };
     $$('.vw-bar .zbtn').forEach((b) => b.onclick = () => { const i = activePane(); setZoom(i, S.view.panes[i].zoom + (b.dataset.z === '+' ? 0.25 : -0.25)); });

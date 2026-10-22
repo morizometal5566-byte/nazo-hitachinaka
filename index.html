@@ -47,7 +47,6 @@
       <div class="tb-title"><span id="stage-label" class="tb-stage"></span><span id="objective-text" class="tb-obj"></span></div>
       <button type="button" id="btn-menu" class="iconbtn" aria-haspopup="dialog" aria-label="メニュー（ヒント・メモ・前の資料・設定）"><span aria-hidden="true">☰</span></button>
     </header>
-    <div id="peek-slot-main" class="peek-slot"></div>
     <main class="scroll" id="scroll">
       <section class="feed" aria-label="莉々香からのメッセージ">
         <button type="button" id="btn-older" class="older" hidden></button>
@@ -72,23 +71,26 @@
       <h2 id="vw-title" class="vw-title"></h2>
       <button type="button" id="btn-compare" class="btn ghost sm vw-compare" aria-pressed="false">⇆ 並べて見る</button>
     </div>
-    <div id="peek-slot-viewer" class="peek-slot"></div>
     <div id="panes" class="panes"></div>
+    <section id="drawer" class="drawer" hidden aria-label="答えとメモ">
+      <div class="dw-head">
+        <div class="dw-tabs" role="tablist" aria-label="引き出しの中身"><button type="button" role="tab" data-dw="pz" aria-selected="true">✏ 答え</button><button type="button" role="tab" data-dw="memo" aria-selected="false">📝 メモ</button></div>
+        <button type="button" id="dw-close" class="iconbtn sm" aria-label="答えをしまって、資料を大きく見る">▾</button>
+      </div>
+      <div class="dw-body"><div id="dw-pz" class="dw-pane"></div><div id="dw-memo" class="dw-pane" hidden><label for="memo2" class="sr-only">メモ</label><textarea id="memo2" rows="6" placeholder="気づいたことを書いておけます（自動で保存）"></textarea></div></div>
+      <div id="dw-foot" class="dw-foot"><button type="button" id="dw-submit" class="btn primary">答える</button></div>
+    </section>
     <div class="vw-bar">
       <button type="button" id="btn-viewer-close" class="vb-btn vw-close">← もどる</button>
       <button type="button" id="btn-pin" class="vb-btn" aria-pressed="false"><span aria-hidden="true">📌</span><span class="vb-t" id="btn-pin-t">ピン</span></button>
-      <button type="button" id="btn-vpeek" class="vb-btn" hidden aria-pressed="false">⧉ ちら見</button>
+      <button type="button" id="btn-vpeek" class="vb-btn" hidden>⇄</button>
+      <button type="button" id="btn-drawer" class="vb-btn vb-drawer" hidden aria-expanded="false" aria-controls="drawer">✏ 答え</button>
       <button type="button" id="btn-zcycle" class="vb-btn zcycle" aria-label="拡大を切り替える（100%→150%→200%）">🔍 <span class="zc-v">100%</span></button>
       <div class="zoom" role="group" aria-label="拡大と縮小"><button type="button" class="zbtn" data-z="-" aria-label="縮小">−</button><span class="zval" aria-live="polite">100%</span><button type="button" class="zbtn" data-z="+" aria-label="拡大">＋</button></div>
     </div>
   </aside>
 </section>
 
-<!-- ちら見（ピン留めした資料を、いまの画面の上半分にちらっと出す） -->
-<section id="peek" class="peek" hidden aria-label="ピン留めした資料">
-  <div class="peek-head"><span id="peek-title" class="peek-title"></span><button type="button" id="peek-unpin" class="iconbtn sm" aria-label="ピンを外す">📌✕</button><button type="button" id="peek-close" class="iconbtn sm" aria-label="ちら見を閉じる">✕</button></div>
-  <div id="peek-body" class="peek-body" tabindex="0"></div>
-</section>
 
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <button type="button" id="new-badge" class="new-badge" hidden>⬇ 新しいメッセージ</button>

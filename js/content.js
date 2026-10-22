@@ -242,18 +242,24 @@
       html: () => `
 <article class="doc letter-doc" data-fold-doc="0-1">
   <div class="letter-wrap">${letterSVG()}<div class="fold-handle" role="button" tabindex="0" aria-label="点線で折る" style="top:calc(${(F / TOT * 100).toFixed(2)}% - 28px)"></div><p class="fold-live sr-only" aria-live="polite"></p></div>
-  <div class="fold-bar">
-    <p class="fold-state" aria-live="polite"><span class="fs-chip">ひらいた手紙</span><span class="fs-t"></span></p>
-    ${foldDiagram()}
-    <button type="button" class="tool big" data-act="fold" aria-pressed="false">✂ 点線で折る（表）</button>
-    <button type="button" class="tool" data-act="lflip" aria-pressed="false" aria-label="上半分を切り取って、その紙だけ裏返す">⇋ 切り取って裏返す（裏）</button>
-    <span class="fold-help">点線を下へスワイプしても折れます</span>
+  <div class="fold-bar" data-fold-bar="0-1">
+    <div class="fb-row">
+      <span class="fold-state" aria-live="polite"><span class="fs-chip">ひらいた手紙</span></span>
+      <button type="button" class="tool big" data-act="fold" aria-pressed="false">✂ 折る</button>
+      <button type="button" class="tool" data-act="lflip" aria-pressed="false" aria-label="上半分を切り取って、その紙だけ裏返す">⇋ 裏返す</button>
+      <button type="button" class="tool ghost fb-more-btn" data-act="fdiag" aria-expanded="false" aria-label="紙の動かし方の図">？</button>
+    </div>
+    <div class="fb-more" hidden>
+      <p class="fs-t"></p>
+      ${foldDiagram()}
+      <p class="fold-help">点線を下へスワイプしても折れます</p>
+    </div>
   </div>
-  <details class="sr-text"><summary>手紙を文字だけで読む</summary>
+  <div class="sr-only sr-text">
   <p>あなたへ。捜査から外されました。お姉ちゃんが疑われてる。森山さんには内緒で、資料を送ります。ロックは、お姉ちゃんが昔作ってくれた穴あき手紙。読むときは、湊線に乗って。パスワードは、ひらがな7文字。――風見莉々香</p>
   <p>追伸　森山さん、なんで私を相棒に選んだんだろう。</p>
   <p>${holeSr()}</p>
-  <p>地図：右上に方位（Nが上）。湊線は「勝田へ」から、中根・高田の鉄橋・那珂湊・殿山・平磯・美乃浜学園・磯崎・阿字ヶ浦の順。海は地図の右（東）。★（写真館）は那珂湊駅のすぐ下。湊公園は写真館のとなり。うちは平磯駅の近くの海ぞい。カメラの印（潮見さんの日の出ポイント）は2つ：平磯の先の海岸（そばに「堤防と岩」の絵）と、磯崎の先の海岸（そばに「灯台」の絵）。那珂川は地図の下。</p></details>
+  <p>地図：右上に方位（Nが上）。湊線は「勝田へ」から、中根・高田の鉄橋・那珂湊・殿山・平磯・美乃浜学園・磯崎・阿字ヶ浦の順。海は地図の右（東）。★（写真館）は那珂湊駅のすぐ下。湊公園は写真館のとなり。うちは平磯駅の近くの海ぞい。カメラの印（潮見さんの日の出ポイント）は2つ：平磯の先の海岸（そばに「堤防と岩」の絵）と、磯崎の先の海岸（そばに「灯台」の絵）。那珂川は地図の下。</p></div>
 </article>`,
     },
     '1-1': {

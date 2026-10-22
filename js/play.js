@@ -36,7 +36,7 @@
     <span class="vid-t" aria-hidden="true">0.0秒</span>
   </div>
   ${o.cap ? `<figcaption>${esc(o.cap)}</figcaption>` : ''}
-  <details class="sr-text"><summary>映像を文字で読む</summary><p>${esc(desc)}</p></details>
+  <div class="sr-only sr-text"><p>${esc(desc)}</p></div>
 </figure>`;
   }
   const hms = (s) => { const [h, m, x] = s.split(' ').pop().split(':').map(Number); return h * 3600 + m * 60 + (x || 0); };
@@ -149,7 +149,7 @@
   <label class="dr-manual" hidden><span>✋ 自分の手でゆらす（ゆっくり進める）</span><input type="range" min="0" max="100" step="1" value="0" aria-label="現像の進み具合"></label>
   <p class="dr-msg" aria-live="polite">赤いランプの下。印画紙を現像液に入れると、絵がだんだん浮かんでくる。<b>メーターの金色の帯</b>のあいだで引き上げよう。</p>
   ${o.cap ? `<figcaption>${o.cap}</figcaption>` : ''}
-  <details class="sr-text dr-desc" hidden><summary>プリントを文字で読む</summary><p>${o.desc}</p></details>
+  <div class="sr-only sr-text dr-desc" hidden><p>${o.desc}</p></div>
 </figure>`;
   }
   function drPaint(fig, p) {
