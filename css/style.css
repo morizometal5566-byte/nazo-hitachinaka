@@ -497,9 +497,6 @@ body.cb .cbl{display:inline}
 .ov.flipanim .ov-sheet{transform-box:fill-box;transform-origin:center;animation:ovflip .5s ease}
 @keyframes ovflip{0%{transform:scaleX(1)}50%{transform:scaleX(.04)}100%{transform:scaleX(1)}}
 @media (prefers-reduced-motion:reduce){.svg-letter g.mir,.svg-letter .back>rect{transition:none}.ov.flipanim .ov-sheet{animation:none}}
-figure.ov[data-ov="6-4s"] .ov-sheet rect[mask]{transition:fill .3s ease .25s}
-figure.ov[data-ov="6-4s"].is-flipped .ov-sheet rect[mask]{fill:#fffdf7}
-figure.ov[data-ov="6-4s"].is-flipped .ov-sheet text{opacity:.45}
 
 /* ===== v8.2：手紙ビューアを大きく（道具は下のバーに。拡大しない） ===== */
 .letter-doc .fold-bar{position:static;margin:0;padding:0;border:0;background:none}
@@ -568,3 +565,77 @@ body.drawer-open .vw-bar{padding-bottom:8px}
 .svg-letter .um-dot{fill:#1e6fd9}
 .svg-letter .um-n{font:700 13px var(--sans);fill:#fff}
 .pane-dock .tool.ghost{color:#eee;border-color:#888;background:transparent}
+
+/* ===== v9 新しい資料（S3・S7・S8・S9） ===== */
+.title-old{background:#3a2f1c;border:1px solid #c9a24a;color:#f3e3b5;border-radius:10px;padding:.6em .9em;font-size:.95rem;text-align:left;margin:.4em 0}
+/* S3 来客帳 */
+.guestbook{background:#f6f0df}
+.gb{font-size:1.05rem}
+.gb th{background:#e9e0c8;border:1px solid #9b9482;padding:.35em .5em;font-size:.9rem;text-align:left}
+.gb td{height:2.4em;vertical-align:middle}
+.gb td:first-child{font-family:var(--hand);font-size:1.15em;color:#1a3d8f}
+.smudge{display:inline-block;max-width:100%;height:1.1em;vertical-align:middle;border-radius:40%;background:radial-gradient(ellipse at 30% 50%,rgba(40,60,120,.55),rgba(40,60,120,.18) 60%,transparent 75%),radial-gradient(ellipse at 75% 40%,rgba(40,60,120,.4),transparent 70%);filter:blur(1.5px)}
+.memo-hand{font-family:var(--hand);font-size:1.06rem;line-height:1.75;padding-left:1.2em}
+.memo-hand li{margin:.35em 0}
+.memo-hand li.old{color:#6b5f48;border-top:1px dashed #b9b09a;padding-top:.4em;margin-top:.8em;list-style:none;margin-left:-1.2em}
+.slip-pair{display:grid;gap:12px}
+@media (min-width:700px){.slip-pair{grid-template-columns:1fr 1fr}}
+.slip{background:#fffdf6;border:1px solid #b9b09a;border-radius:3px;padding:10px 12px;box-shadow:1px 2px 4px rgba(0,0,0,.15)}
+.slip .kv{font-size:.98rem}
+.sign-hand{font-family:var(--hand);font-size:1.3em;color:#1a3d8f;letter-spacing:.1em}
+.pen.big{font-size:1.25em;line-height:1.6;border-bottom:none;margin:.3em 0}
+.cork{background:#a87a4c;background-image:radial-gradient(rgba(0,0,0,.12) 1px,transparent 1.5px),radial-gradient(rgba(255,255,255,.08) 1px,transparent 1.5px);background-size:7px 7px,11px 11px;border:8px solid #6d4a2b;border-radius:4px;padding:16px 10px;display:grid;gap:14px;margin-top:6px}
+.flyer{position:relative;background:#fff;color:#2b2b2b;padding:12px 14px 12px;box-shadow:2px 3px 6px rgba(0,0,0,.35);font-size:1rem;line-height:1.6}
+.flyer::before{content:"";position:absolute;top:6px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#c0392b;box-shadow:0 1px 2px rgba(0,0,0,.5)}
+.flyer b{font-size:1.1em}
+.flyer small{font-size:.9rem;color:#4f4a40}
+.flyer.f1{transform:rotate(1.4deg);background:#eef6ff}
+.flyer.f2{transform:rotate(-1.2deg)}
+.flyer.f3{transform:rotate(.8deg);background:#fff4e6}
+.flyer.old{background:#efe2b8;color:#3f3622;background-image:linear-gradient(135deg,rgba(150,110,40,.12),transparent 60%)}
+/* 書き癖（S7）：字の形は似せてあり、手がかりは書き方の癖だけ */
+.hw{font-family:var(--hand);font-size:1.18rem;line-height:2;letter-spacing:.06em;color:#1f2a44;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
+.letter.anon{background:#f4f0e4;border-left:6px double #c9bfa6}
+.hw-anon{font-size:1.3rem;padding:.4em .2em;background:repeating-linear-gradient(transparent 0 calc(2em - 1px),#b8c6d8 calc(2em - 1px) 2em)}
+.poster{background:#f0e6c6;border:1px solid #b9a77a;padding:14px;margin:8px 0 14px;box-shadow:2px 3px 6px rgba(0,0,0,.2);transform:rotate(-.6deg);color:#2b2414;background-image:linear-gradient(160deg,rgba(120,90,30,.14),transparent 50%)}
+.chalk{background:#2f4a3a;color:#f2f2ea;font-family:var(--hand);font-size:1.18rem;line-height:1.9;padding:14px 16px;border:8px solid #7a5a3a;border-radius:4px;text-shadow:0 0 1px rgba(255,255,255,.6)}
+.hw-hama li{font-size:1.12rem}
+.hw-otsu,.hw-sugaya{background:repeating-linear-gradient(transparent 0 calc(2em - 1px),#d2cbb8 calc(2em - 1px) 2em)}
+.burnt{display:inline-block;background:linear-gradient(90deg,#2a1a0e,#5a3a1e 40%,#2a1a0e);color:transparent;border-radius:3px;padding:0 .4em;min-width:5em;user-select:none}
+/* S9 ノート・マフラー・符号表 */
+.kidnote .ruled{background:#fffef8 repeating-linear-gradient(transparent 0 calc(2.2em - 1px),#a9c1de calc(2.2em - 1px) 2.2em);border-left:3px solid #e5a3a3;padding:.1em .8em;line-height:2.2em}
+.kidnote .ruled p{margin:0}
+.hw-kid{font-family:var(--hand);font-size:1.2rem;color:#2a2a5a;letter-spacing:.08em}
+.hw-kid .big{font-size:1.45em;font-weight:700}
+figure.scarf{margin:6px auto 0;max-width:420px;background:#2b3038;border-radius:6px;padding:6px 6px 8px}
+.svg-scarf{display:block;width:100%;height:auto}
+figure.scarf figcaption{color:#cfd6df;font-size:.9rem;text-align:center;font-family:var(--sans);margin-top:4px}
+.sc-rib{fill:#5a0f12}
+.sc-hi{stroke:#e98585;stroke-width:1;opacity:.55}
+.sc-fr{fill:none;stroke:#c62828;stroke-width:4;stroke-linecap:round}
+.sc-lb{fill:#f3e3b5;font-size:18px;font-family:var(--sans);font-weight:700}
+.rules{padding-left:1.2em;margin:.4em 0 .8em}
+.rules li{margin:.3em 0}
+.morse{width:100%;border-collapse:collapse;font-size:1rem;margin:.4em 0}
+.morse th,.morse td{border:1px solid #9b9482;padding:.25em .35em;text-align:center}
+.morse th{background:#efe8d6;width:2.6em;font-family:var(--serif);font-size:1.05em}
+.morse td{font-family:var(--sans);letter-spacing:.08em;white-space:nowrap;font-size:.98em}
+.morse th:nth-child(3){border-left:3px double #6d6656}
+/* S8 かけら */
+figure.pcs{margin:8px 0 0}
+.pcs-frame{background:#1d1a17;border-radius:6px;padding:4px;line-height:0}
+.pcs-svg{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.pcs-bg{fill:#2a2622}
+.pc{cursor:grab;outline:none}
+.pc.lift{cursor:grabbing;filter:drop-shadow(0 6px 6px rgba(0,0,0,.6))}
+.pc:focus-visible .pc-edge{stroke:#f0b44a;stroke-width:4}
+.pc-edge{fill:none;stroke:#5b3b1e;stroke-width:1.6}
+.pc-ink text{font-family:var(--hand);font-size:30px;fill:#1c2238}
+.pc-env{font-family:var(--serif);font-size:26px;fill:#3b2410;font-weight:700}
+.pc-env.sm{font-size:17px;font-weight:400}
+figure.pcs .ov-tools{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:6px;line-height:1.5}
+figure.pcs .ov-state{font-size:.9rem;font-family:var(--sans)}
+.newspaper{background:#f1ecdf;font-family:var(--serif)}
+.newspaper h3{font-size:1.35em;letter-spacing:.04em}
+.np-body{text-indent:1em;line-height:1.85;font-size:1.02rem}
+figure.pcs{max-width:620px;margin-left:auto;margin-right:auto}

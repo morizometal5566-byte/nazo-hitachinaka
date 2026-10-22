@@ -43,6 +43,7 @@
   }
   let drag = null;
   function onDown(e) {
+    if (pcDown(e)) return;
     const sh = e.target.closest('.ov-sheet');
     if (sh) {
       const fig = sh.closest('figure.ov'); const svg = sh.ownerSVGElement;
@@ -57,6 +58,7 @@
     if (tr) { traceAt(tr, e); tr._tracing = e.pointerId; try { tr.setPointerCapture(e.pointerId); } catch (er) {} }
   }
   function onMove(e) {
+    if (pcMove(e)) return;
     if (drag && e.pointerId === drag.id) {
       drag.o.x = Math.round(drag.ox + (e.clientX - drag.x0) * drag.k);
       drag.o.y = Math.round(drag.oy + (e.clientY - drag.y0) * drag.k);
@@ -69,6 +71,7 @@
     if (cap) traceAt(cap, e); else if (tr && e.pointerType === 'mouse') traceAt(tr, e);
   }
   function onUp(e) {
+    if (pcUp(e)) return;
     if (drag && e.pointerId === drag.id) { drag.fig.classList.remove('dragging'); ovApply(drag.fig); drag = null; ctx.save(); }
     $$('figure.trace svg').forEach((s) => { if (s._tracing === e.pointerId) s._tracing = null; });
   }
@@ -89,6 +92,62 @@
     const fig = sh.closest('figure.ov');
     if (d) { e.preventDefault(); const o = ovState(fig); o.x += d[0]; o.y += d[1]; ovApply(fig); ctx.save(); }
     else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); const o = ovState(fig); o.r = (o.r + 90) % 360; ovApply(fig); ctx.save(); }
+  }
+
+  /* ---------- 紙のかけら（自由に動かす。合っていても何も言わない＝答えは自分で読む） ---------- */
+  function pcState(fig) {
+    const S = st(); S.pc = S.pc || {}; const id = fig.dataset.pcs;
+    if (!S.pc[id]) S.pc[id] = $$('.pc', fig).sort((a, b) => a.dataset.pc - b.dataset.pc).map((g) => g.dataset.at.split(',').map(Number));
+    return S.pc[id];
+  }
+  function pcApply(fig) {
+    const P = pcState(fig);
+    $$('.pc', fig).forEach((g) => { const [x, y] = P[+g.dataset.pc]; g.setAttribute('transform', `translate(${x} ${y})`); });
+    const S = st(); const ord = S.pcz && S.pcz[fig.dataset.pcs];
+    if (ord) { const lay = $('.pcs-layer', fig); ord.forEach((i) => { const g = $(`.pc[data-pc="${i}"]`, lay); if (g) lay.appendChild(g); }); }
+  }
+  function pcFront(fig, g) {
+    g.parentNode.appendChild(g);
+    const S = st(); S.pcz = S.pcz || {}; S.pcz[fig.dataset.pcs] = $$('.pc', fig).map((x) => +x.dataset.pc);
+  }
+  let pdrag = null;
+  function pcDown(e) {
+    const g = e.target.closest && e.target.closest('figure.pcs .pc');
+    if (!g) return false;
+    const fig = g.closest('figure.pcs'); const P = pcState(fig); const i = +g.dataset.pc;
+    pcFront(fig, g);
+    pdrag = { fig, g, i, x0: e.clientX, y0: e.clientY, ox: P[i][0], oy: P[i][1], k: svgScale(g.ownerSVGElement), id: e.pointerId };
+    try { g.setPointerCapture(e.pointerId); } catch (er) {}
+    g.classList.add('lift'); e.preventDefault();
+    return true;
+  }
+  function pcMove(e) {
+    if (!pdrag || e.pointerId !== pdrag.id) return false;
+    const P = pcState(pdrag.fig);
+    P[pdrag.i] = [Math.round(Math.max(-400, Math.min(620, pdrag.ox + (e.clientX - pdrag.x0) * pdrag.k))), Math.round(Math.max(-470, Math.min(620, pdrag.oy + (e.clientY - pdrag.y0) * pdrag.k)))];
+    pdrag.g.setAttribute('transform', `translate(${P[pdrag.i][0]} ${P[pdrag.i][1]})`);
+    return true;
+  }
+  function pcUp(e) {
+    if (!pdrag || e.pointerId !== pdrag.id) return false;
+    pdrag.g.classList.remove('lift'); pdrag = null; ctx.save(); return true;
+  }
+  function pcKey(e) {
+    const g = e.target.closest && e.target.closest('figure.pcs .pc');
+    if (!g) return;
+    const d = { ArrowLeft: [-4, 0], ArrowRight: [4, 0], ArrowUp: [0, -4], ArrowDown: [0, 4] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    const fig = g.closest('figure.pcs'); const P = pcState(fig); const i = +g.dataset.pc;
+    P[i] = [P[i][0] + d[0] * (e.shiftKey ? 5 : 1), P[i][1] + d[1] * (e.shiftKey ? 5 : 1)];
+    g.setAttribute('transform', `translate(${P[i][0]} ${P[i][1]})`); ctx.save();
+  }
+  function pcTool(b) {
+    const fig = b.closest('figure.pcs'); const S = st();
+    if (S.pc) delete S.pc[fig.dataset.pcs];
+    if (S.pcz) delete S.pcz[fig.dataset.pcs];
+    const lay = $('.pcs-layer', fig); $$('.pc', lay).sort((a, c) => a.dataset.pc - c.dataset.pc).forEach((g) => lay.appendChild(g));
+    pcApply(fig); ctx.save();
   }
 
   /* ---------- なぞる（ダイヤ図） ---------- */
@@ -185,6 +244,7 @@
     $$('figure.dev', root).forEach((f) => devApply(f));
     $$('figure.frags', root).forEach(frApply);
     $$('figure.neg', root).forEach(negApply);
+    $$('figure.pcs', root).forEach(pcApply);
     $$('figure.trace', root).forEach((fig) => {
       const svg = $('svg', fig);
       $$('.trn', svg).forEach((g) => { g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button'); g.setAttribute('aria-label', g.dataset.info); });
@@ -199,7 +259,7 @@
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointercancel', onUp);
     document.addEventListener('keydown', (e) => {
-      ovKey(e);
+      ovKey(e); pcKey(e);
       const g = e.target.closest && e.target.closest('figure.trace .trn');
       if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); traceSel(g.ownerSVGElement, g); ctx.save(); }
     });
@@ -207,6 +267,7 @@
     document.addEventListener('click', (e) => {
       let b;
       if ((b = e.target.closest('[data-ovt]'))) return ovTool(b);
+      if ((b = e.target.closest('[data-pct]'))) return pcTool(b);
       if ((b = e.target.closest('[data-fragt]'))) return fragTool(b);
       if ((b = e.target.closest('.frag'))) return fragClick(b);
       if ((b = e.target.closest('[data-negt]'))) return negTool(b);

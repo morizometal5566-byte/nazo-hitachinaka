@@ -3,7 +3,8 @@
 (function () {
   'use strict';
   const { DOCS, CHAT, STAGES } = window.CASE;
-  const KEY = 'negative19.v8';
+  const KEY = 'negative19.v9';
+  const OLD_KEYS = ['negative19.v8', 'negative19.v7', 'negative19.v6'];
   const N = window.N19, ANS = window.ANS || {};
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -14,7 +15,7 @@
   /* ================= 保存 ================= */
   function fresh() {
     return {
-      v: 8, phase: 'title', stage: 0, step: 0, solved: {}, chat: [], read: [],
+      v: 9, phase: 'title', stage: 0, step: 0, solved: {}, chat: [], read: [],
       fold: {}, ph: {}, ov: {}, dev: {}, dr: {}, fr: {}, trace: {}, neg: null, flags: {}, choice: null,
       wrong: {}, hints: {}, drafts: {}, memo: '', pin: null, peek: false,
       settings: { font: 'm', contrast: false, motion: false, cb: false },
@@ -28,10 +29,13 @@
       if (!raw) return null;
       const d = JSON.parse(raw);
       const f = fresh();
-      if (d.v !== 8) return null;
+      if (d.v !== 9) return null;
       return Object.assign(f, d, { settings: Object.assign(f.settings, d.settings || {}), view: Object.assign(f.view, d.view || {}) });
     } catch (e) { return null; }
   }
+  // 前の版（v8以前）のセーブは物語も章の数もちがうので使わない。消して、タイトルで一度だけお知らせする
+  let oldSave = false;
+  try { OLD_KEYS.forEach((k) => { if (localStorage.getItem(k)) { oldSave = true; localStorage.removeItem(k); } }); } catch (e) {}
   let S = load();
   const hadSave = !!(S && S.phase === 'game');
   if (!S) S = fresh();
@@ -263,6 +267,8 @@
             <li><b>風見みゆき</b>：潮見達郎さんの殺害を認め、起訴された。「野々香を守るため」と信じて払い続けた19年のことも、自分の口で話した。</li>
             <li><b>風見野々香</b>：母をかばって嘘をついたことは、家族のための証拠隠しにあたるが、親族なので刑は免除された（刑法105条）。今も赤いマフラーで、干し芋を売っている。</li>
             <li><b>森山浩行</b>：現場からネガ袋を持ち去ったことを自ら報告し、警察を辞めた（証拠隠滅）。</li>
+            <li><b>鳴海沙織</b>：19年目に、兄の最期を知った。莉々香に会いに来て「兄は、あの子たちを怖がらせていた。……知ってた。でも、兄だったの」と言った。しおさい食堂は、今日もあんこう鍋。</li>
+            <li><b>浜野透</b>：「子供がいた、って言えてよかった」。春から、子ども無線教室をまた開くらしい。</li>
             <li><b>風見莉々香</b>：8歳のときのことは、罪に問われない（14歳未満・刑法41条）。刑事を続けている。黄色い帽子は、いま莉々香の机の引き出しにある。</li></ul>
           <p class="muted">${S.choice === 'submit' ? 'ネガは証拠として署に出した。' : 'ネガは平磯の海に返した。'}　遊んでくれて、ありがとう。</p>
           <p class="sm">🔁 <b>読み返しモード</b>：資料の引き出しに全部の資料が入りました。開くと、最初から置いてあった伏線の「本当の意味」が一行ずつ出ます。</p>
@@ -392,7 +398,7 @@
     S.choice = c; save();
     const box = $('#puzzle .choice-card'); if (box) box.hidden = true;
     const then = () => { renderAll(); const h = $('#pz-name'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } };
-    deliver(`s8.${c}`, () => { if (S.flags.yellow) deliver('s8.yellow', then); else then(); });
+    deliver(`s${STAGES.length}.${c}`, () => { if (S.flags.yellow) deliver(`s${STAGES.length}.yellow`, then); else then(); });
   }
 
   /* ================= ビューア ================= */
@@ -823,8 +829,9 @@
     renderAll();
     if (!S.chat.includes('s0.start')) deliver('s0.start');
     if (!isClear() && S.stage > 0 && !S.chat.includes(`s${S.stage}.start`)) deliver(`s${S.stage}.start`);
-    if (isClear() && !S.chat.includes('s7.7M')) deliver('s7.7M', () => setTimeout(renderPuzzle, 0));
-    if (isClear() && S.choice && !S.chat.includes(`s8.${S.choice}`)) deliver(`s8.${S.choice}`);
+    const lastKey = `s${STAGES.length - 1}.${STAGES[STAGES.length - 1].puzzles[0].id}`;
+    if (isClear() && !S.chat.includes(lastKey)) deliver(lastKey, () => setTimeout(renderPuzzle, 0));
+    if (isClear() && S.choice && !S.chat.includes(`s${STAGES.length}.${S.choice}`)) deliver(`s${STAGES.length}.${S.choice}`);
     $('#puzzle').focus({ preventScroll: true });
   }
   function bindGlobal() {
@@ -888,6 +895,7 @@
     $('#btn-continue').hidden = false; $('#btn-new2').hidden = false; $('#btn-new').hidden = true;
     $('#btn-continue').textContent = `続きから（${isClear() ? (S.choice ? 'クリア・読み返し' : '夜明け') : STAGES[S.stage].label}）`;
   }
+  if (oldSave && !hadSave) { const n = document.createElement('p'); n.className = 'title-old'; n.setAttribute('role', 'status'); n.textContent = '物語が新しくなりました（v9：新しい3人と、11の謎）。前のセーブデータは使えないため、はじめからになります。'; const tn = $('.title-note'); if (tn) tn.before(n); }
   $('#btn-continue').onclick = startGame;
   $('#btn-new').onclick = startGame;
   $('#btn-new2').onclick = async () => { const ok = await confirmDlg('はじめから遊びますか？ 今の進み具合とメモは消えます。', 'はじめから'); if (ok) wipe(); };
