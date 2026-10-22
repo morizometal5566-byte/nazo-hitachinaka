@@ -93,6 +93,7 @@
     <text x="200" y="${F + 26}" text-anchor="middle" class="back-note sn-omote">表：折って重ねた（えんぴつの字の面が上）</text>
     <text x="200" y="${F + 26}" text-anchor="middle" class="back-note sn-ura">裏：切り取って裏返した（手紙の文の面が上）</text>
   </g>
+  <g class="umarks" aria-hidden="true"></g>
   <g class="foldline" aria-hidden="true">
     <line x1="8" y1="${F}" x2="392" y2="${F}" stroke="#b33" stroke-width="2.5" stroke-dasharray="11 7"/>
     <text x="200" y="${F - 8}" text-anchor="middle" class="fold-cap">✂ - - - - - - - - - ✂</text>
@@ -243,16 +244,21 @@
 <article class="doc letter-doc" data-fold-doc="0-1">
   <div class="letter-wrap">${letterSVG()}<div class="fold-handle" role="button" tabindex="0" aria-label="点線で折る" style="top:calc(${(F / TOT * 100).toFixed(2)}% - 28px)"></div><p class="fold-live sr-only" aria-live="polite"></p></div>
   <div class="fold-bar" data-fold-bar="0-1">
+    <div class="fb-seg" role="group" aria-label="手紙の置き方">
+      <button type="button" class="seg" data-act="fstate" data-v="open" aria-pressed="true">ひらいた</button>
+      <button type="button" class="seg" data-act="fstate" data-v="omote" aria-pressed="false">表で重ねる</button>
+      <button type="button" class="seg" data-act="fstate" data-v="ura" aria-pressed="false">裏で重ねる</button>
+    </div>
     <div class="fb-row">
       <span class="fold-state" aria-live="polite"><span class="fs-chip">ひらいた手紙</span></span>
-      <button type="button" class="tool big" data-act="fold" aria-pressed="false">✂ 折る</button>
-      <button type="button" class="tool" data-act="lflip" aria-pressed="false" aria-label="上半分を切り取って、その紙だけ裏返す">⇋ 裏返す</button>
+      <button type="button" class="tool" data-act="fsee" aria-pressed="true" aria-label="重ねた紙を少しすかして、下のます目も見る">🔦 すかす</button>
+      <button type="button" class="tool ghost" data-act="fmclear" aria-label="自分でつけた印をぜんぶ消す">印を消す</button>
       <button type="button" class="tool ghost fb-more-btn" data-act="fdiag" aria-expanded="false" aria-label="紙の動かし方の図">？</button>
     </div>
     <div class="fb-more" hidden>
       <p class="fs-t"></p>
       ${foldDiagram()}
-      <p class="fold-help">点線を下へスワイプしても折れます</p>
+      <p class="fold-help">ます目をタップすると、自分用の印（番号）をつけられます。印は置き方を変えても残ります。もう一度タップで消えます。</p>
     </div>
   </div>
   <div class="sr-only sr-text">

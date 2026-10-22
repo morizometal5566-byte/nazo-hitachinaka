@@ -549,3 +549,22 @@ body.drawer-open .vw-bar{padding-bottom:8px}
 .dw-body .pz-name{font-size:1.02rem;margin:0 0 4px}
 .dw-body .pz-q{margin:0 0 6px;font-size:.92rem}
 .dw-foot .btn{min-height:42px}
+/* v8.3：S0 置き方スイッチ・すかし・自分用の印 */
+.pane-dock .fb-seg{display:flex;gap:0;margin:0 0 6px;border:1px solid #888;border-radius:12px;overflow:hidden}
+.pane-dock .seg{flex:1 1 0;min-height:44px;border:0;border-left:1px solid #666;background:#2f333a;color:#f1ede4;font:700 .92rem var(--sans);cursor:pointer;touch-action:manipulation;padding:0 .3em;white-space:nowrap}
+.pane-dock .seg:first-child{border-left:0}
+.pane-dock .seg[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.pane-dock .tool[data-act="fsee"][aria-pressed="true"]{background:#f6e7b8;color:#2b2416}
+.pane-dock .tool:disabled{opacity:.45}
+.svg-letter.see.is-folded .back > rect{fill-opacity:.6}
+.svg-letter.see.is-folded .grid-k{fill:#333}
+.svg-letter .flap{transition-duration:.2s;transition-delay:0s}
+.svg-letter .back{transition-duration:.2s;transition-delay:0s}
+.svg-letter.is-folded .back{transition-delay:0s}
+.svg-letter.is-folded .state-note{transition-delay:0s}
+.svg-letter g.mir{transition-duration:.28s}
+.svg-letter.is-flipped .hole-no{opacity:.78;fill:#5a5040}
+.svg-letter .um-ring{fill:none;stroke:#1e6fd9;stroke-width:3;stroke-dasharray:5 4}
+.svg-letter .um-dot{fill:#1e6fd9}
+.svg-letter .um-n{font:700 13px var(--sans);fill:#fff}
+.pane-dock .tool.ghost{color:#eee;border-color:#888;background:transparent}

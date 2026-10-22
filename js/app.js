@@ -613,8 +613,7 @@
         clearTimeout(svg._t);
         if (f) {
           const compact = () => { svg.setAttribute('viewBox', svg.dataset.vbFolded); wrap.classList.add('compact'); };
-          if (svg.classList.contains('is-folded') || reduced() || !svg.dataset.init) { svg.classList.add('is-folded'); compact(); }
-          else { svg.classList.add('is-folded'); svg._t = setTimeout(compact, 950); }
+          svg.classList.add('is-folded'); compact(); // すぐ切り替える（何度も見比べるので待たせない）
         } else {
           svg.setAttribute('viewBox', svg.dataset.vbFull); wrap.classList.remove('compact');
           void svg.getBoundingClientRect();
@@ -624,7 +623,15 @@
       }
       const fl = f && !!S.fold[doc.dataset.foldDoc + ':flip'];
       const mir = doc.querySelector('svg.svg-letter g.mir'); if (mir) { mir.removeAttribute('transform'); mir.style.transform = fl ? 'scaleX(-1)' : ''; }
-      if (svg) svg.classList.toggle('is-flipped', fl);
+      if (svg) {
+        svg.classList.toggle('is-flipped', fl);
+        svg.classList.toggle('see', !S.fold[fid + ':nosee']);
+        const um = svg.querySelector('g.umarks'); const ms = S.fold[fid + ':marks'] || [];
+        if (um) um.innerHTML = ms.map((k, n) => { const [r, c] = k.split(',').map(Number); const x = 32 + 56 * (c + 0.5), y = 740 + 56 * (r + 0.5); return `<circle cx="${x}" cy="${y}" r="24" class="um-ring"/><circle cx="${x - 20}" cy="${y + 20}" r="10" class="um-dot"/><text x="${x - 20}" y="${y + 24}" text-anchor="middle" class="um-n">${n + 1}</text>`; }).join('');
+      }
+      $$(`[data-fold-bar="${fid}"] [data-act="fstate"]`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === (!f ? 'open' : fl ? 'ura' : 'omote'))));
+      $$(`[data-fold-bar="${fid}"] [data-act="fsee"]`).forEach((b) => { b.setAttribute('aria-pressed', String(!S.fold[fid + ':nosee'])); b.disabled = !f; });
+      $$(`[data-fold-bar="${fid}"] [data-act="fmclear"]`).forEach((b) => { b.hidden = !(S.fold[fid + ':marks'] || []).length; });
       const fb = doc.querySelector('[data-act="lflip"]'); if (fb) { fb.setAttribute('aria-pressed', String(fl)); fb.textContent = fl ? '⇋ 表にもどす' : '⇋ 裏返す'; fb.setAttribute('aria-label', fl ? '裏返した紙を表にもどす（折ったまま）' : '上半分を切り取って、その紙だけ裏返す'); }
       const b = doc.querySelector('[data-act="fold"]'); if (b) { b.setAttribute('aria-pressed', String(f)); b.textContent = f ? '↺ ひらく' : '✂ 折る'; }
       const fsEl = doc.querySelector('.fold-state');
@@ -655,6 +662,29 @@
       const host = lf.closest('[data-fold-doc],[data-fold-bar]'); const id = host.dataset.foldDoc || host.dataset.foldBar;
       if (!S.fold[id]) { S.fold[id + ':flip'] = true; setFold(id, true); return; }
       S.fold[id + ':flip'] = !S.fold[id + ':flip']; save(); applyFolds(); return;
+    }
+    const fsb = e.target.closest('[data-act="fstate"]');
+    if (fsb) { // ひらいた／表で重ねる／裏で重ねる を1回で切り替える
+      const id = fsb.closest('[data-fold-bar]').dataset.foldBar; const v = fsb.dataset.v;
+      S.fold[id + ':flip'] = v === 'ura';
+      if (!!S.fold[id] !== (v !== 'open')) setFold(id, v !== 'open'); else { save(); applyFolds(); }
+      return;
+    }
+    const see = e.target.closest('[data-act="fsee"]');
+    if (see) { const id = see.closest('[data-fold-bar]').dataset.foldBar; S.fold[id + ':nosee'] = !S.fold[id + ':nosee']; save(); applyFolds(); return; }
+    const mc = e.target.closest('[data-act="fmclear"]');
+    if (mc) { const id = mc.closest('[data-fold-bar]').dataset.foldBar; S.fold[id + ':marks'] = []; save(); applyFolds(); return; }
+    const lsvg = e.target.closest('svg.svg-letter');
+    if (lsvg && !e.target.closest('.fold-handle')) { // ます目をタップ → 自分用の印（答えは出さない。どこに付けるかはプレイヤーが決める）
+      const id = lsvg.closest('[data-fold-doc]').dataset.foldDoc;
+      const pt = lsvg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+      const m = lsvg.getScreenCTM(); if (!m) return;
+      const q = pt.matrixTransform(m.inverse());
+      const c = Math.floor((q.x - 32) / 56), r = Math.floor((q.y - 740) / 56);
+      if (c < 0 || c > 5 || r < 0 || r > 4) return;
+      const k = `${r},${c}`; const ms = S.fold[id + ':marks'] = S.fold[id + ':marks'] || [];
+      const at = ms.indexOf(k); if (at >= 0) ms.splice(at, 1); else ms.push(k);
+      save(); applyFolds(); return;
     }
     const dg = e.target.closest('[data-act="fdiag"]');
     if (dg) { const more = dg.closest('.fold-bar').querySelector('.fb-more'); more.hidden = !more.hidden; dg.setAttribute('aria-expanded', String(!more.hidden)); return; }
