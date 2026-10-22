@@ -86,7 +86,10 @@
 
   let toastTimer = null;
   function toast(html, action, ms) {
+    // 動画の再生中は出さない（終わってから出す）
+    if (window.VID && window.VID.busy()) { window.VID.onIdle(() => toast(html, action, ms)); return; }
     const t = $('#toast');
+    t.classList.toggle('low', isPhone() && viewerOpen());
     t.innerHTML = `<span class="toast-msg">${html}</span>${action ? `<button type="button" class="btn sm primary" id="toast-act">${action.label}</button>` : ''}<button type="button" class="iconbtn sm" id="toast-x" aria-label="通知を閉じる">✕</button>`;
     t.hidden = false; t.classList.remove('in'); void t.offsetWidth; t.classList.add('in');
     if (action) $('#toast-act').onclick = () => { t.hidden = true; action.fn(); };
@@ -126,7 +129,13 @@
     const prev = S.chat.filter((x) => keyStage(x) === cur - 1);
     return st === cur - 1 && prev[prev.length - 1] === k;
   }
+  let feedDeferred = false;
   function renderFeed() {
+    // 動画を再生中（見せている途中）なら、物語の欄は描き直さない（動画が消えないように）。終わってから描き直す
+    if (window.VID && window.VID.busy()) {
+      if (!feedDeferred) { feedDeferred = true; window.VID.onIdle(() => { feedDeferred = false; renderFeed(); }); }
+      return;
+    }
     const old = [], now = [];
     S.chat.forEach((k) => {
       const msgs = k in shown ? CHAT[k].slice(0, shown[k]) : CHAT[k];
@@ -145,10 +154,20 @@
     queue.push({ key, after });
     if (!typing) pump();
   }
-  function keepBottomVisible() {
+  let quietFeed = false; // 動画を見ないまま先に進んだときは、画面を動かさずにバッジだけ
+  function newBadge(on) {
+    const b = $('#new-badge'); if (!b) return;
+    b.hidden = !on;
+  }
+  function nearBottom() {
+    const sc = $('#scroll'), last = $('#feed').lastElementChild; if (!sc || !last) return true;
+    return last.getBoundingClientRect().bottom <= sc.getBoundingClientRect().bottom + 24;
+  }
+  function keepBottomVisible(force) {
     // 新しい話が出たら、物語の最後が見えるように（ただし、いまの謎を画面から追い出さない）
     const sc = $('#scroll'); const last = $('#feed').lastElementChild;
     if (!sc || !last || viewerOpen()) return;
+    if (!force && (quietFeed || (window.VID && window.VID.busy()))) { if (!nearBottom()) newBadge(true); return; }
     const r = last.getBoundingClientRect(), sr = sc.getBoundingClientRect();
     if (r.bottom > sr.bottom - 8) sc.scrollTop += Math.min(r.bottom - sr.bottom + 16, r.top - sr.top - 8);
   }
@@ -159,10 +178,18 @@
     const msgs = CHAT[job.key];
     const finish = () => { delete shown[job.key]; if (job.after) job.after(); pump(); };
     if (!isNowKey(job.key)) { delete shown[job.key]; renderFeed(); if (job.after) job.after(); pump(); return; }
+    const afterMsg = (m) => { // 動画のメッセージなら、見終わるまで次を出さない
+      if (!m.video) { next(); return; }
+      const fig = $('#feed').lastElementChild && $('#feed').lastElementChild.querySelector('figure.vid');
+      if (!fig) { next(); return; }
+      window.VID.gate(fig, (quiet) => { if (quiet) quietFeed = true; next(); });
+    };
     const next = () => {
       const i = shown[job.key];
       if (i >= msgs.length) { finish(); return; }
-      if (reduced()) { shown[job.key] = i + 1; $('#feed').insertAdjacentHTML('beforeend', msgHTML(msgs[i])); keepBottomVisible(); next(); return; }
+      if (window.VID && window.VID.busy()) { window.VID.onIdle(next); return; } // 別の動画を再生中
+      if (msgs[i].video) quietFeed = false;
+      if (reduced()) { shown[job.key] = i + 1; $('#feed').insertAdjacentHTML('beforeend', msgHTML(msgs[i])); keepBottomVisible(); afterMsg(msgs[i]); return; }
       const ty = document.createElement('li');
       ty.className = (msgs[i].who === 'beat' || msgs[i].video) ? 'beat typing' : 'msg typing'; ty.setAttribute('aria-hidden', 'true');
       ty.className += msgs[i].who === 'mori' ? ' mori' : '';
@@ -172,7 +199,7 @@
         ty.remove(); shown[job.key] = i + 1;
         const f = $('#feed'); f.insertAdjacentHTML('beforeend', msgHTML(msgs[i])); f.lastElementChild.classList.add('in');
         keepBottomVisible();
-        next();
+        afterMsg(msgs[i]);
       }, Math.min(950, 380 + msgs[i].t.length * 12));
     };
     next();
@@ -451,6 +478,7 @@
         if (pendingBack) wantPush = true; // 「もどる」の履歴処理が終わってから積む
         else { try { history.pushState({ vw: 1 }, ''); } catch (e) {} }
       }
+      { const t = $('#toast'); if (t) t.hidden = true; } // 資料を開いたら、通知は閉じる（資料にかぶらない）
       $('#btn-viewer-close').focus({ preventScroll: true });
     } else {
       const sc = $(`.pane[data-pane="${i}"] .pane-scroll`); if (sc) sc.focus({ preventScroll: true });
@@ -539,18 +567,27 @@
         }
         svg.dataset.init = '1';
       }
-      const fl = !!S.fold[doc.dataset.foldDoc + ':flip'];
-      const mir = $('svg.svg-letter g.mir', doc); if (mir) { if (fl) mir.setAttribute('transform', 'translate(400 0) scale(-1 1)'); else mir.removeAttribute('transform'); }
-      const fb = $('[data-act="lflip"]', doc); if (fb) { fb.setAttribute('aria-pressed', String(fl)); fb.textContent = fl ? '⇋ 表にもどす' : '⇋ 裏返す'; }
-      const b = $('[data-act="fold"]', doc); if (b) { b.setAttribute('aria-pressed', String(f)); b.textContent = f ? '↺ 手紙をひらく' : '✂ 点線で折る'; }
+      const fl = f && !!S.fold[doc.dataset.foldDoc + ':flip'];
+      const mir = $('svg.svg-letter g.mir', doc); if (mir) { mir.removeAttribute('transform'); mir.style.transform = fl ? 'scaleX(-1)' : ''; }
+      if (svg) svg.classList.toggle('is-flipped', fl);
+      const fb = $('[data-act="lflip"]', doc); if (fb) { fb.setAttribute('aria-pressed', String(fl)); fb.textContent = fl ? '⇋ 表にもどす（折ったまま）' : '⇋ 切り取って裏返す（裏）'; }
+      const b = $('[data-act="fold"]', doc); if (b) { b.setAttribute('aria-pressed', String(f)); b.textContent = f ? '↺ 手紙をひらく' : '✂ 点線で折る（表）'; }
+      const fsEl = $('.fold-state', doc);
+      if (fsEl) {
+        const k = !f ? 'open' : fl ? 'ura' : 'omote';
+        fsEl.dataset.state = k;
+        $('.fs-chip', fsEl).textContent = { open: 'いま：ひらいた手紙', omote: 'いま：表', ura: 'いま：裏' }[k];
+        $('.fs-t', fsEl).textContent = { open: '上が手紙、下があんごう表と地図。', omote: '上半分を点線で下へ折って、あんごう表に重ねた。見えているのは、えんぴつの字の面。', ura: '上半分を点線で切り取り、その紙だけ左右に裏返して重ねた。見えているのは手紙の文の面（逆さま）。えんぴつの字は、紙の裏から透けて左右反対。' }[k];
+        const dg = $('.fold-diagram', doc); if (dg) dg.dataset.state = k;
+      }
       const help = $('.fold-help', doc); if (help) help.textContent = f ? 'ひらくと、地図が見えます' : '点線を下へスワイプしても折れます';
       const h = $('.fold-handle', doc); if (h) h.setAttribute('aria-label', f ? '手紙をひらく' : '点線で折る');
-      const live = $('.fold-live', doc); if (live) live.textContent = (f ? '手紙を折りました。穴から下の字が見えています。穴のそばに漢字があります。' : '') + (fl ? '（手紙は裏返し）' : '');
+      const live = $('.fold-live', doc); if (live) live.textContent = f ? (fl ? '上半分を切り取って裏返し、重ねました（裏）。' : '上半分を折って重ねました（表）。') + '穴から下の字が見えています。穴のそばに漢字があります。' : '';
     });
   }
   function setFold(id, v) {
     if (!!S.fold[id] === v) return;
-    S.fold[id] = v; save(); applyFolds();
+    S.fold[id] = v; if (!v) S.fold[id + ':flip'] = false; save(); applyFolds();
     renderPuzzleSoft();
   }
   function renderPuzzleSoft() { // 入力中の文字を消さないよう、「手紙を開く」ボタンだけ出し入れする
@@ -559,7 +596,11 @@
   }
   document.addEventListener('click', (e) => {
     const lf = e.target.closest('[data-act="lflip"]');
-    if (lf) { const id = lf.closest('[data-fold-doc]').dataset.foldDoc; S.fold[id + ':flip'] = !S.fold[id + ':flip']; save(); applyFolds(); return; }
+    if (lf) { // 裏返すのは、切り取った上半分だけ。ひらいたままなら、先に重ねる
+      const id = lf.closest('[data-fold-doc]').dataset.foldDoc;
+      if (!S.fold[id]) { S.fold[id + ':flip'] = true; setFold(id, true); return; }
+      S.fold[id + ':flip'] = !S.fold[id + ':flip']; save(); applyFolds(); return;
+    }
     const b = e.target.closest('[data-act="fold"]');
     if (!b) return;
     const id = b.closest('[data-fold-doc]').dataset.foldDoc;
@@ -721,6 +762,8 @@
       f.requestSubmit ? f.requestSubmit() : f.dispatchEvent(new Event('submit', { cancelable: true }));
     };
     $('#scroll').addEventListener('scroll', () => { clearTimeout(bbT); bbT = setTimeout(updateMainLabel, 80); }, { passive: true });
+    $('#scroll').addEventListener('scroll', () => { if (!$('#new-badge').hidden && nearBottom()) { newBadge(false); quietFeed = false; } }, { passive: true });
+    $('#new-badge').addEventListener('click', () => { quietFeed = false; newBadge(false); const l = $('#feed').lastElementChild; if (l) l.scrollIntoView({ block: 'end', behavior: reduced() ? 'auto' : 'smooth' }); });
     $('#bb-peek').onclick = () => togglePeek();
     $('#btn-vpeek').onclick = () => togglePeek();
     $('#peek-close').onclick = () => togglePeek(false);

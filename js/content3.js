@@ -67,7 +67,7 @@
       <rect x="${x0}" y="${y0}" width="${w}" height="${h}" rx="6" fill="#e9dcc0" mask="url(#gr-m)"/>
       <rect x="${x0}" y="${y0}" width="${w}" height="${h}" rx="6" fill="none" stroke="#a1887f" stroke-width="2"/>
       ${marks}
-      <text x="${x0 + 6}" y="${y0 + h - 8}" class="back-note">0-1の手紙（穴の部分・うら）</text>`;
+      <text x="${x0 + 6}" y="${y0 + h - 8}" class="back-note">0-1の手紙の穴の部分（切り取ったもの）</text>`;
   }
 
   const PRINT_SVG = `

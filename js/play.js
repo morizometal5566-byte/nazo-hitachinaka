@@ -31,6 +31,7 @@
   <div class="vid-ctl" role="group" aria-label="動画の操作">
     <button type="button" class="tool" data-vidt="play">▶ 再生</button>
     <button type="button" class="tool ghost" data-vidt="replay">↺ 最初から</button>
+    <button type="button" class="tool ghost vid-skip" data-vidt="skip">続きへ ▸</button>
     <input type="range" class="vid-seek" min="0" max="1000" step="1" value="0" aria-label="コマ送り（場面を選ぶ）">
     <span class="vid-t" aria-hidden="true">0.0秒</span>
   </div>
@@ -67,16 +68,19 @@
     if (have && have.poster) v.poster = `assets/video/${name}.jpg`;
     v.addEventListener('timeupdate', () => vidUpdate(fig));
     v.addEventListener('play', () => vidUpdate(fig));
-    v.addEventListener('pause', () => vidUpdate(fig));
+    v.addEventListener('pause', () => { vidUpdate(fig); idleSoon(); });
+    v.addEventListener('ended', () => { vidUpdate(fig); idleSoon(); });
     v.addEventListener('loadedmetadata', () => { fig.classList.add('loaded'); vidUpdate(fig); });
-    v.addEventListener('error', () => { fig.classList.add('missing'); fig.classList.remove('has-file'); });
+    v.addEventListener('error', () => { fig.classList.add('missing'); fig.classList.remove('has-file'); if (fig._gate) fig._gate(false); idleSoon(); });
     if (io) io.observe(fig);
   }
   function load(fig) { const v = $('video', fig); if (!v.src) { v.src = `assets/video/${fig.dataset.vid}.mp4`; v.preload = 'auto'; } return v; }
   function scan(root) { $$('figure.vid', root || document).forEach(setup); }
   function onClick(e) {
     const b = e.target.closest('[data-vidt]'); if (!b) return;
-    const fig = b.closest('figure.vid'); if (!fig || fig.classList.contains('missing')) return;
+    const fig = b.closest('figure.vid'); if (!fig) return;
+    if (b.dataset.vidt === 'skip') { const v0 = $('video', fig); if (v0 && !v0.paused) v0.pause(); if (fig._gate) fig._gate(false); return; }
+    if (fig.classList.contains('missing')) return;
     const v = load(fig);
     if (b.dataset.vidt === 'replay') { v.currentTime = 0; v.play().catch(() => {}); }
     else if (v.paused) v.play().catch(() => {}); else v.pause();
@@ -88,6 +92,40 @@
     const go = () => { v.currentTime = (+r.value / 1000) * (v.duration || 0); vidUpdate(fig); };
     if (v.readyState >= 1) go(); else v.addEventListener('loadedmetadata', go, { once: true });
   }
+
+
+  /* ---------- 動画の再生中は、メッセージ・通知を後回しにする ----------
+     busy()：再生中の動画がある、または「見せている途中」（gate中）の動画がある。
+     gate(fig, done)：その動画が終わる／「続きへ」／読み込めない／しばらく止まったまま、のどれかで done(quiet) を呼ぶ。
+     quiet=true のときは、画面を勝手に動かさずに届ける（バッジだけ出す）。 */
+  const idlers = [];
+  function busy() {
+    return $$('figure.vid').some((f) => f._gate || (() => { const v = $('video', f); return v && !v.paused && !v.ended && v.readyState > 1; })());
+  }
+  function idleSoon() { setTimeout(() => { if (busy()) return; const l = idlers.splice(0); l.forEach((f) => f()); }, 0); }
+  function onIdle(fn) { if (!busy()) fn(); else idlers.push(fn); }
+  function gate(fig, done) {
+    setup(fig);
+    const v = $('video', fig);
+    if (!fig.classList.contains('has-file') || fig.classList.contains('missing') || !v) { done(false); return; }
+    let fin = false, idle = 0, started = false; const t0 = Date.now();
+    const end = (quiet) => {
+      if (fin) return; fin = true; clearInterval(t); delete fig._gate; fig.classList.remove('gating');
+      done(!!quiet); idleSoon();
+    };
+    fig._gate = end; fig.classList.add('gating');
+    const t = setInterval(() => {
+      if (!document.body.contains(fig)) return end(true);
+      if (fig.classList.contains('missing')) return end(false);
+      if (v.ended) return end(false);
+      if (!v.paused) { started = true; idle = 0; if (Date.now() - t0 > 60000) end(true); return; }
+      idle += 500;
+      if (!started && idle >= GATE_WAIT) end(true);
+      else if (started && idle >= 20000) end(true);
+    }, 500);
+    v.addEventListener('ended', () => end(false), { once: true });
+  }
+  let GATE_WAIT = 6000;
 
   /* ---------- 暗室ミニゲーム：印画紙を現像液に入れ、ちょうどいい濃さで引き上げる ---------- */
   const MODES = {
@@ -199,6 +237,6 @@
     });
     apply(document);
   }
-  window.VID = { html, scan, STORY };
+  window.VID = { html, scan, STORY, busy, gate, onIdle, setGateWait: (ms) => { GATE_WAIT = ms; } };
   window.PLAY = { darkroom, init, apply, won: (id) => !!(ctx && st().dr && st().dr[id] && st().dr[id].won) };
 })();

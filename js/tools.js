@@ -32,8 +32,9 @@
     const okEl = $('.ov-ok', fig); if (okEl) okEl.hidden = !ok;
     const a = [];
     const rr = ((o.r % 360) + 360) % 360; if (rr) a.push(`${rr}°`);
-    if (o.f) a.push('裏返し');
-    $('.ov-state', fig).textContent = (a.length ? 'いま：' + a.join('・') : '') + (ok ? '　✓ ぴったり' : '');
+    a.unshift(o.f ? '裏（裏返した）' : '表');
+    $('.ov-state', fig).textContent = 'いま：' + a.join('・') + (ok ? '　✓ ぴったり' : '');
+    fig.classList.toggle('is-flipped', !!o.f);
     return ok;
   }
   function svgScale(svg) {
@@ -76,7 +77,7 @@
     const t = b.dataset.ovt;
     if (t === 'rr') o.r = (o.r + 90) % 360;
     else if (t === 'rl') o.r = (o.r + 270) % 360;
-    else if (t === 'flip') o.f = !o.f;
+    else if (t === 'flip') { o.f = !o.f; fig.classList.remove('flipanim'); void fig.getBoundingClientRect(); fig.classList.add('flipanim'); clearTimeout(fig._fa); fig._fa = setTimeout(() => fig.classList.remove('flipanim'), 600); }
     else if (t === 'align') { o.x = sn.x; o.y = sn.y; }
     else Object.assign(o, J(fig, 'init'));
     ovApply(fig); ctx.save();

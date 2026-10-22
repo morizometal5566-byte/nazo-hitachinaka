@@ -49,8 +49,8 @@
 
   function holeSr() { // 穴とます目の対応（文字で読む人用）。表のまま／裏返し の2通り
     const at = ([r, c]) => `${r + 1}行目の${c + 1}文字目`;
-    return '穴：手紙の下のほうに7つ。点線で下へ折ると、あんごう表（横6×縦5）の7つのます目に重なる。手紙のうらには、穴のそばにえんぴつで漢字が1文字ずつ。そのまま折ると、' +
-      TARGETS.map((t, i) => `「${MARKS[i]}」の穴は${at(t)}`).join('、') + 'に重なる。手紙を裏返して（左右を反対にして）折ると、穴は左右反対の位置に来て、えんぴつの字は裏から透けて左右反対に見える：' +
+    return '穴：手紙の上半分の下のほうに7つ。紙の動かし方は2通り。【表】上半分を赤い点線で下へ折って、下のあんごう表（横6×縦5）に重ねる。見えるのは上半分のうら面（えんぴつの字の面）。【裏】上半分を点線で切り取り、その紙だけを左右にくるっと裏返して重ねる。見えるのは手紙の文の面（文字は逆さま）。手紙のうらには、穴のそばにえんぴつで漢字が1文字ずつ。【表】では、' +
+      TARGETS.map((t, i) => `「${MARKS[i]}」の穴は${at(t)}`).join('、') + 'に重なる。【裏】では、穴は左右反対の位置に来て、えんぴつの字は紙の裏から透けて左右反対に見える：' +
       TARGETS.map(([r, c], i) => `「${MARKS[i]}」${at([r, 5 - c])}`).join('、') + '。';
   }
   function letterSVG() {
@@ -86,14 +86,49 @@
   <g class="back" style="transform-origin:200px ${F}px">
     <rect x="0" y="${F}" width="${W}" height="${F}" fill="#efe6d1" mask="url(#${id}-m)"/>
     ${rim}
-    <text x="200" y="${F + 26}" text-anchor="middle" class="back-note">（手紙のうら。穴のそばに、えんぴつで1文字ずつ）</text>
   </g>
+  </g>
+  <g class="state-note" aria-hidden="true">
+    <rect x="70" y="${F + 8}" width="260" height="26" rx="13" class="sn-bg"/>
+    <text x="200" y="${F + 26}" text-anchor="middle" class="back-note sn-omote">表：折って重ねた（えんぴつの字の面が上）</text>
+    <text x="200" y="${F + 26}" text-anchor="middle" class="back-note sn-ura">裏：切り取って裏返した（手紙の文の面が上）</text>
   </g>
   <g class="foldline" aria-hidden="true">
     <line x1="8" y1="${F}" x2="392" y2="${F}" stroke="#b33" stroke-width="2.5" stroke-dasharray="11 7"/>
     <text x="200" y="${F - 8}" text-anchor="middle" class="fold-cap">✂ - - - - - - - - - ✂</text>
   </g>
 </svg>`;
+  }
+
+
+  // 紙の動かし方の図（答えにふれない、ただの模式図）。いまの状態の枠が光る
+  function foldDiagram() {
+    const paperTop = (x, y, face) => face === 'text'
+      ? `<rect x="${x}" y="${y}" width="70" height="40" rx="2" fill="#fffdf7" stroke="#9c8f73"/>${[10, 18, 26].map((d) => `<line x1="${x + 10}" y1="${y + 40 - d}" x2="${x + 58}" y2="${y + 40 - d}" stroke="#bbb" stroke-width="2"/>`).join('')}<text x="${x + 35}" y="${y + 12}" text-anchor="middle" font-size="9" fill="#999" transform="rotate(180 ${x + 35} ${y + 9})">あなたへ</text>`
+      : face === 'pencil'
+        ? `<rect x="${x}" y="${y}" width="70" height="40" rx="2" fill="#efe6d1" stroke="#9c8f73"/><text x="${x + 14}" y="${y + 16}" font-size="10" fill="#6b5e45">✎</text><text x="${x + 46}" y="${y + 30}" font-size="10" fill="#6b5e45">✎</text>`
+        : `<rect x="${x}" y="${y}" width="70" height="40" rx="2" fill="#fffdf7" stroke="#9c8f73"/>${[10, 18, 26].map((d) => `<line x1="${x + 10}" y1="${y + d}" x2="${x + 58}" y2="${y + d}" stroke="#bbb" stroke-width="2"/>`).join('')}`;
+    const holes = (x, y) => [[18, 30], [36, 22], [54, 32]].map(([a, b]) => `<circle cx="${x + a}" cy="${y + b}" r="3.5" fill="#2a2d33" stroke="#9c8f73"/>`).join('');
+    const grid = (x, y) => `<rect x="${x}" y="${y}" width="70" height="40" rx="2" fill="#fbf7ec" stroke="#b33" stroke-dasharray="3 2"/>${[0, 1, 2, 3].map((i) => `<line x1="${x + 14 + i * 14}" y1="${y + 4}" x2="${x + 14 + i * 14}" y2="${y + 36}" stroke="#e0d6c0"/>`).join('')}<text x="${x + 35}" y="${y + 53}" text-anchor="middle" font-size="9" fill="#e08a80">下：あんごう表</text>`;
+    return `
+<div class="fold-diagram" aria-hidden="true">
+  <svg viewBox="0 0 330 140" class="fd-svg">
+    <g class="fd-p fd-open"><rect x="2" y="2" width="104" height="136" rx="8" class="fd-box"/>
+      ${paperTop(19, 12, 'front')}${holes(19, 12)}
+      <line x1="14" y1="54" x2="94" y2="54" stroke="#b33" stroke-width="2" stroke-dasharray="4 3"/>
+      ${grid(19, 56)}<text x="54" y="132" text-anchor="middle" class="fd-cap">ひらいた手紙</text></g>
+    <g class="fd-p fd-omote"><rect x="113" y="2" width="104" height="136" rx="8" class="fd-box"/>
+      <path d="M128 30 q-14 22 4 36" fill="none" stroke="#c9b48a" stroke-width="2" marker-end="url(#fd-ar)"/>
+      ${grid(130, 56)}${paperTop(130, 56, 'pencil')}${holes(130, 56).replace(/cy="(\d+)"/g, (m, v) => `cy="${2 * 56 + 40 - v}"`)}
+      <text x="165" y="22" text-anchor="middle" class="fd-cap">表</text><text x="165" y="36" text-anchor="middle" class="fd-sub">点線で下へ折る</text>
+      <text x="165" y="132" text-anchor="middle" class="fd-sub">えんぴつの面が上</text></g>
+    <g class="fd-p fd-ura"><rect x="224" y="2" width="104" height="136" rx="8" class="fd-box"/>
+      ${grid(241, 56)}${paperTop(241, 56, 'text')}${holes(241, 56).replace(/cx="(\d+)"/g, (m, v) => `cx="${2 * 241 + 70 - v}"`).replace(/cy="(\d+)"/g, (m, v) => `cy="${2 * 56 + 40 - v}"`)}
+      <text x="276" y="22" text-anchor="middle" class="fd-cap">裏</text><text x="276" y="36" text-anchor="middle" class="fd-sub">✂切り取って ⇋裏返す</text>
+      <text x="276" y="132" text-anchor="middle" class="fd-sub">手紙の文の面が上</text></g>
+    <defs><marker id="fd-ar" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#c9b48a"/></marker></defs>
+  </svg>
+</div>`;
   }
 
   /* ---------- 写真（SVG） ---------- */
@@ -208,8 +243,10 @@
 <article class="doc letter-doc" data-fold-doc="0-1">
   <div class="letter-wrap">${letterSVG()}<div class="fold-handle" role="button" tabindex="0" aria-label="点線で折る" style="top:calc(${(F / TOT * 100).toFixed(2)}% - 28px)"></div><p class="fold-live sr-only" aria-live="polite"></p></div>
   <div class="fold-bar">
-    <button type="button" class="tool big" data-act="fold" aria-pressed="false">✂ 点線で折る</button>
-    <button type="button" class="tool" data-act="lflip" aria-pressed="false" aria-label="手紙を裏返す（左右を反対に）">⇋ 裏返す</button>
+    <p class="fold-state" aria-live="polite"><span class="fs-chip">ひらいた手紙</span><span class="fs-t"></span></p>
+    ${foldDiagram()}
+    <button type="button" class="tool big" data-act="fold" aria-pressed="false">✂ 点線で折る（表）</button>
+    <button type="button" class="tool" data-act="lflip" aria-pressed="false" aria-label="上半分を切り取って、その紙だけ裏返す">⇋ 切り取って裏返す（裏）</button>
     <span class="fold-help">点線を下へスワイプしても折れます</span>
   </div>
   <details class="sr-text"><summary>手紙を文字だけで読む</summary>
@@ -314,6 +351,7 @@
       { t: '今夜、潮見写真館の店主が死んだ。第一発見者は、私のお姉ちゃん。' },
       { t: 'なのに私は捜査から外された。「身内の事件に刑事は入れん」って、森山さんに。' },
       { t: '資料は手紙でロックしてある。お姉ちゃんが昔作ってくれた『穴あき手紙』と同じ仕組み。あなたなら開けられる。', doc: '0-1' },
+      { t: '使い方。手紙の上半分を赤い点線で下に折って、穴から下の表をのぞく。それが「表」。上半分を点線で切り取って、その紙だけくるっと裏返して重ねたら「裏」。……下の表と地図は、動かさないでね。' },
     ],
     's0.0M': [
       { t: '開いた……！ 「ほしいもやさん」。うちの仕事。お母さんとお姉ちゃんの干し芋。' },
