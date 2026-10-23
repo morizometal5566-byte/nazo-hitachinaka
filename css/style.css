@@ -48,12 +48,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 .tb-stage{font-family:var(--serif);font-weight:700;color:var(--accent);font-size:1em}
 .tb-obj{font-size:.86em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px max(14px,var(--sar)) 24px max(14px,var(--sal))}
-.bottombar{flex:none;display:flex;gap:8px;align-items:stretch;padding:8px max(10px,var(--sar)) calc(8px + var(--sab)) max(10px,var(--sal));background:var(--bg2);border-top:1px solid var(--line)}
-.bb-btn{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:64px;min-height:52px;padding:2px 8px;border-radius:12px;border:1px solid var(--line);background:var(--panel);cursor:pointer;line-height:1.2;touch-action:manipulation}
-.bb-btn .bb-t{font-size:.78em;white-space:nowrap}
-.bb-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
-.bb-main{flex:1;min-height:52px;font-size:1.08em}
-body.kb-open .bottombar{padding-bottom:8px}
 
 /* ビューア：スマホは全画面（操作は下）、PCは右の列 */
 .col-view{display:none;flex-direction:column;min-width:0;min-height:0;background:var(--bg2)}
@@ -298,9 +292,6 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 @media (max-height:500px) and (orientation:landscape){
   .tb-obj{display:none}
   .topbar{padding-top:calc(2px + var(--sat));padding-bottom:2px}
-  .bottombar{padding-top:4px;padding-bottom:calc(4px + var(--sab))}
-  .bb-btn,.bb-main{min-height:44px}
-  .bb-btn{flex-direction:row;gap:4px}
   .peek{height:calc(var(--app-h,100dvh) * .42)}
   .vw-head{padding-top:calc(2px + var(--sat));padding-bottom:2px}
   .vw-bar{padding-top:4px;padding-bottom:calc(4px + var(--sab))}
@@ -517,35 +508,12 @@ body.cb .cbl{display:inline}
   .doc{margin-left:0;margin-right:0}
 }
 /* 答えとメモの引き出し（スマホのビューア） */
-.drawer{flex:none;display:flex;flex-direction:column;max-height:min(52%,calc(var(--app-h,100dvh) * .52));background:var(--bg);border-top:3px solid var(--accent);border-radius:14px 14px 0 0;box-shadow:0 -6px 18px rgba(0,0,0,.45)}
-.drawer[hidden]{display:none}
-.dw-head{flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px 4px 10px}
-.dw-tabs{display:flex;gap:6px;flex:1}
-.dw-tabs [role=tab]{min-height:40px;padding:0 .9em;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:700}
-.dw-tabs [aria-selected="true"]{border-color:var(--accent);color:var(--accent)}
-.dw-body{flex:1;min-height:0;overflow:auto;padding:0 10px 6px;overscroll-behavior:contain}
-.dw-body .puzzle{margin:0;padding:0}
-.dw-body .facts{display:none}
-.dw-body #memo2{width:100%;min-height:9em;font:inherit;background:#15171b;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px}
-.dw-foot{flex:none;padding:6px 10px calc(6px + var(--sab,0px));border-top:1px solid var(--line)}
-.dw-foot[hidden]{display:none}
-.dw-foot .btn{width:100%;min-height:46px}
-body.drawer-open .vw-bar{padding-bottom:8px}
-.vb-drawer{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.vb-drawer[aria-expanded="true"]{background:var(--panel);color:var(--accent)}
-@media (min-width:900px){ #btn-drawer,.drawer{display:none!important} }
 @media (max-width:380px){ .vb-btn{padding:0 .5em} }
 .sr-text.sr-only{margin:0}
 .pane-dock .fb-row{flex-wrap:nowrap}
 .pane-dock .fs-chip{white-space:nowrap;font-size:.82rem;padding:.05em .55em}
 .pane-dock .tool,.pane-dock .tool.big{white-space:nowrap;padding:.1em .7em}
 .pane-dock .fb-more-btn{min-width:44px;padding:0}
-.drawer{max-height:min(48%,calc(var(--app-h,100dvh) * .48))}
-.dw-body .pz-card{padding:10px 12px;margin:0}
-.dw-body .pz-kind{display:none}
-.dw-body .pz-name{font-size:1.02rem;margin:0 0 4px}
-.dw-body .pz-q{margin:0 0 6px;font-size:.92rem}
-.dw-foot .btn{min-height:42px}
 /* v8.3：S0 置き方スイッチ・すかし・自分用の印 */
 .pane-dock .fb-seg{display:flex;gap:0;margin:0 0 6px;border:1px solid #888;border-radius:12px;overflow:hidden}
 .pane-dock .seg{flex:1 1 0;min-height:44px;border:0;border-left:1px solid #666;background:#2f333a;color:#f1ede4;font:700 .92rem var(--sans);cursor:pointer;touch-action:manipulation;padding:0 .3em;white-space:nowrap}

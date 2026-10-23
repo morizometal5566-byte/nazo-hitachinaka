@@ -237,7 +237,7 @@
   function factsHTML() {
     const f = allPuzzles().filter((p) => S.solved[p.id] && p.fact);
     if (!f.length) return '';
-    return `<details class="facts" ${S.factsOpen === false ? '' : 'open'}><summary>わかったこと（${f.length}）</summary><ul>${f.map((p) => `<li>${esc(p.fact)}</li>`).join('')}</ul></details>`;
+    return `<details class="facts" ${S.factsOpen ? 'open' : ''}><summary>わかったこと（${f.length}）</summary><ul>${f.map((p) => `<li>${esc(p.fact)}</li>`).join('')}</ul></details>`;
   }
   function fieldHTML(p, f, dr) {
     const id = `f-${f.k}`;
@@ -279,10 +279,13 @@
       return;
     }
     const p = curPuzzle();
-    const kindLabel = p.id === '0M' ? 'ロック' : p.final ? '大謎　答えは1回でまとめて判定' : `${stageObj().label.split(' ')[0]} の謎　答えは1回でまとめて判定`;
+    const multi = p.fields.length > 1;
+    const kindLabel = (p.id === '0M' ? 'ロック' : p.final ? '大謎' : `${stageObj().label.split(' ')[0]} の謎`) + (multi ? '　全部の欄をまとめて判定' : '');
+    const one = !multi && p.fields[0].type !== 'chip';
     const dr = S.drafts[p.id] || {};
     const fb = S.lastFb && S.lastFb.id === p.id ? S.lastFb : null;
     const w = S.wrong[p.id] || 0;
+    const hintNote = !S.menuSeen && !w ? '<p class="pz-hintnote muted sm">ヒントは右上のメニューに（各謎3つまで・減点なし）</p>' : '';
     const openBtn = p.needFold && !S.fold['0-1'] ? '<button type="button" class="btn ghost sm open-doc" data-open="0-1">手紙を開く</button>' : '';
     box.innerHTML = `${stepsHTML()}${factsHTML()}
       <div class="pz-card${p.kind === 'mid' ? ' mid' : ''}">
@@ -290,12 +293,12 @@
         <h2 id="pz-name" class="pz-name">${esc(p.name)}</h2>
         <p class="pz-q">${p.kind === 'mid' ? sentenceWithBlanks(p) : esc(p.q)}</p>
         ${openBtn}
-        <form class="pz-form" id="pz-form" novalidate>
+        <form class="pz-form${one ? ' one' : ''}" id="pz-form" novalidate>
           <div class="fields">${p.fields.map((f) => fieldHTML(p, f, dr)).join('')}</div>
-          <button type="submit" class="sr-only" tabindex="-1">答える</button>
+          <button type="submit" class="btn primary pz-go" id="pz-go">答える</button>
         </form>
         <p id="pz-fb" class="pz-fb${fb ? ' ' + fb.cls : ''}" role="status" aria-live="polite">${fb ? esc(fb.msg) : ''}</p>
-        <div class="pz-foot">${w >= 5 ? '<span class="nudge">行き詰まったら、ヒント1だけ見てみる？（減点なし）</span>' : ''}${w ? `<span class="muted sm">間違えた回数 ${w}</span>` : ''}</div>
+        ${w ? `<div class="pz-foot">${w >= 3 ? '<button type="button" class="nudge linkish" data-menu="hint">行き詰まったら、右上のメニューからヒントを（減点なし）</button>' : ''}<span class="muted sm">間違えた回数 ${w}</span></div>` : ''}${hintNote}
       </div>`;
     const form = $('#pz-form');
     form.onsubmit = (e) => { e.preventDefault(); submit(p); };
@@ -304,28 +307,15 @@
     $$('input[type="radio"]', form).forEach((r) => r.addEventListener('change', () => upd(r)));
     renderBottom();
   }
+  // 下のバーはなし。ヒントの残りはメニューのボタンに小さく、ピン留めは見出しの右に小さく
   function renderBottom() {
-    const b = $('#bb-main');
     const p = curPuzzle();
-    b.disabled = false;
-    if (isClear()) { b.textContent = 'メモを見る'; b.dataset.mode = 'memo'; }
-    else { b.dataset.mode = 'submit'; b.textContent = '答える'; requestAnimationFrame(updateMainLabel); }
-    $('#bb-hint .bb-t').textContent = p ? `ヒント ${S.hints[p.id] || 0}/3` : 'ヒント';
-    const pk = $('#bb-peek');
+    const left = p ? 3 - (S.hints[p.id] || 0) : 0;
+    const bd = $('#menu-badge'); bd.textContent = left > 0 ? String(left) : ''; bd.hidden = !(left > 0);
+    $('#btn-menu').setAttribute('aria-label', `メニュー（ヒント${p ? `：あと${left}つ` : ''}・メモ・前の資料・設定）`);
+    const pk = $('#btn-pinpeek');
     pk.hidden = !S.pin;
-    if (S.pin) { $('#bb-peek-t').textContent = `${S.pin} を見る`; pk.setAttribute('aria-label', `ピン留めした資料 ${S.pin} を大きくひらく`); }
-  }
-  function formVisible() {
-    const f = $('#pz-form'), sc = $('#scroll');
-    if (!f || !sc) return false;
-    const r = f.getBoundingClientRect(), sr = sc.getBoundingClientRect();
-    return r.top < sr.bottom - 40 && r.bottom > sr.top + 20;
-  }
-  let bbT = null;
-  function updateMainLabel() {
-    const b = $('#bb-main');
-    if (b.dataset.mode !== 'submit') return;
-    b.textContent = formVisible() ? '答える' : 'いまの謎へ';
+    if (S.pin) { $('#btn-pinpeek-t').textContent = S.pin; pk.setAttribute('aria-label', `ピン留めした資料 ${S.pin} を大きくひらく`); }
   }
   function submit(p) {
     const v = {};
@@ -336,8 +326,9 @@
     const empty = p.fields.find((f) => !String(v[f.k] || '').trim());
     const fb = $('#pz-fb');
     if (empty) {
-      const msg = p.fields.length > 1 ? '空いている欄があるよ。全部そろえてから答えよう。' : '答えを入れてね。';
-      S.lastFb = { id: p.id, msg, cls: 'info' }; save(); fb.className = 'pz-fb info'; fb.textContent = msg;
+      // 空のまま送ったときは、欄に戻すだけ（複数の欄のときだけ、ひとこと）
+      const msg = p.fields.length > 1 ? '空いている欄があるよ。' : '';
+      fb.className = 'pz-fb info'; fb.textContent = msg;
       const el = empty.type === 'chip' ? $(`#pz-form input[name="${empty.k}"]`) : $('#f-' + empty.k);
       if (el) el.focus();
       return;
@@ -366,14 +357,13 @@
       $$('input,button', card).forEach((b) => { b.disabled = true; });
       $('#pz-fb').className = 'pz-fb ok'; $('#pz-fb').textContent = '正解！';
     }
-    $('#bb-main').disabled = true;
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // スマホのキーボードを閉じる
     const chatKey = `s${stg}.${p.id}`;
     if (lastInStage) { S.stage = stg + 1; S.step = 0; }
     else S.step += 1;
     save();
     setTimeout(() => {
-      if (drawerOpen()) { closeDrawer(); closeViewer(false); } // 正解したら、物語のつづきへ
+      if (viewerOpen() && isPhone()) closeViewer(false); // 正解したら、物語のつづきへ
       if (lastInStage) {
         if (isClear()) { deliver(chatKey, () => setTimeout(renderPuzzle, 0)); renderAll(); return; }
         renderAll();
@@ -425,7 +415,7 @@
       const opts = unlockedDocs().map((id) => `<option value="${id}"${id === pn.doc ? ' selected' : ''}>${id} ${esc(DOCS[id].title)}</option>`).join('');
       html += `<section class="pane${n === 2 && S.view.active === i ? ' active' : ''}" data-pane="${i}" data-doc="${pn.doc || ''}" aria-label="${n === 2 ? (i ? '右' : '左') + 'の資料' : '資料'}">
         ${n === 2 ? `<div class="pane-head"><label class="sr-only" for="sel-${i}">表示する資料</label><select id="sel-${i}" class="pane-sel"><option value="">資料を選ぶ</option>${opts}</select></div>` : ''}
-        <div class="pane-scroll" tabindex="0" aria-label="資料の本文。＋−キーで拡大縮小">${d ? `<div class="doc-zoom" style="zoom:${pn.zoom}">${rereadOn() && d.re ? `<p class="re-note"><b>読み返し</b>${esc(d.re)}</p>` : ''}${d.html()}</div>` : '<p class="pane-empty">資料カードを選ぶと、ここに表示されます。</p>'}</div>
+        <div class="pane-scroll" tabindex="0" aria-label="資料の本文。＋−キーで拡大縮小">${d && n === 1 ? `<p class="pane-cap" aria-hidden="true"><b>${esc(d.no)}</b> ${esc(d.title)}</p>` : ''}${d ? `<div class="doc-zoom" style="zoom:${pn.zoom}">${rereadOn() && d.re ? `<p class="re-note"><b>読み返し</b>${esc(d.re)}</p>` : ''}${d.html()}</div>` : '<p class="pane-empty">資料カードを選ぶと、ここに表示されます。</p>'}</div>
       </section>`;
     }
     wrap.innerHTML = html;
@@ -454,7 +444,7 @@
     const target = !S.pin || !d ? null : S.pin !== pn.doc ? S.pin : (S.view.back && S.view.back !== S.pin && DOCS[S.view.back] ? S.view.back : null);
     vp.hidden = !target;
     if (target) { vp.dataset.target = target; vp.textContent = `⇄ ${target === S.pin ? '［ピン］' : ''}${target}`; vp.setAttribute('aria-label', `${target} ${DOCS[target].title} に切り替える（拡大とスクロールはそのまま）`); }
-    const dw = $('#btn-drawer'); if (dw) { dw.hidden = !isPhone() || isClear() || !d; dw.setAttribute('aria-expanded', String(drawerOpen())); dw.textContent = drawerOpen() ? 'しまう' : '答え'; }
+    const ga = $('#btn-goans'); if (ga) ga.hidden = !isPhone() || isClear() || !d;
   }
   function setZoom(i, z) {
     const pn = S.view.panes[i];
@@ -525,33 +515,18 @@
     }
     renderPeek();
   }
-  /* ================= 答えとメモの引き出し（スマホのビューアの下から。シートはそのまま） ================= */
-  let pzHome = null;
-  const drawerOpen = () => !$('#drawer').hidden;
-  function drawerTab(t) {
-    $$('#drawer [data-dw]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.dw === t)));
-    $('#dw-pz').hidden = t !== 'pz'; $('#dw-memo').hidden = t !== 'memo'; $('#dw-foot').hidden = t !== 'pz';
-    if (t === 'memo') $('#memo2').value = S.memo;
-  }
-  function openDrawer(tab) {
-    if (drawerOpen()) { drawerTab(tab || 'pz'); return; }
-    const pz = $('#puzzle');
-    if (!pzHome) { pzHome = document.createComment('puzzle-home'); pz.before(pzHome); }
-    $('#dw-pz').appendChild(pz);
-    $('#drawer').hidden = false; document.body.classList.add('drawer-open');
-    drawerTab(tab || 'pz'); renderViewerBar();
-    const card = $('#dw-pz .pz-card'); if (card) card.scrollIntoView({ block: 'start' });
-  }
-  function closeDrawer() {
-    if (!drawerOpen()) return;
-    if (pzHome) { pzHome.replaceWith($('#puzzle')); pzHome = null; }
-    $('#drawer').hidden = true; document.body.classList.remove('drawer-open');
-    if (document.activeElement && document.activeElement.blur && $('#viewer').contains(document.activeElement) === false) document.activeElement.blur();
-    renderViewerBar();
+  /* ================= 資料から、答えの欄へ（スマホ。答えは謎のカードの1か所だけ） ================= */
+  function goAnswer() {
+    closeViewer(false);
+    setTimeout(() => {
+      const card = $('#puzzle .pz-card'); if (!card) return;
+      card.scrollIntoView({ block: 'center', behavior: 'auto' });
+      const first = $$('#pz-form input[type="text"]').find((x) => !x.value.trim()) || $('#pz-form input');
+      if (first) first.focus({ preventScroll: true });
+    }, 60);
   }
   let pendingBack = false, wantPush = false;
   function closeViewer(fromPop) {
-    closeDrawer();
     if (!viewerOpen()) return;
     rememberView();
     document.body.classList.remove('viewer-open');
@@ -727,6 +702,7 @@
   let menuTab = 'hint';
   function openMenu(tab) {
     menuTab = tab || menuTab;
+    if (!S.menuSeen) { S.menuSeen = true; save(); const hn = $('.pz-hintnote'); if (hn) hn.remove(); }
     renderMenu();
     const d = $('#dlg-menu');
     if (!d.open) d.showModal();
@@ -755,8 +731,7 @@
     const HS = hintsOf(p);
     box.innerHTML = `<p class="hint-for">いまの謎：<b>${esc(p.name)}</b></p>
       <ol class="hints">${HS.map((h, i) => i < n ? `<li class="open"><span class="h-lv">ヒント${i + 1}</span>${esc(h)}</li>` : i === n ? `<li><button type="button" class="btn ghost sm" id="btn-hint-next">ヒント${i + 1}を見る</button></li>` : `<li class="locked"><span class="h-lv">ヒント${i + 1}</span>ヒント${i}を見ると開けます</li>`).join('')}</ol>
-      <p class="muted sm">ヒントは考える向きだけ。答えは出ません。</p>
-      <p class="muted sm">ヒントは自分で開くまで見えません。見ても減点はありません。</p>`;
+      <p class="muted sm">考える向きだけで、答えは出ません。見ても減点なし。</p>`;
     const b = $('#btn-hint-next');
     if (b) b.onclick = async () => {
       const ok = await confirmDlg(HINT_ASK[n], '見る');
@@ -812,7 +787,7 @@
   document.addEventListener('focusin', (e) => {
     const el = e.target;
     if (!el.matches || !el.matches('#puzzle input[type="text"]') || !isPhone()) return;
-    setTimeout(() => { fitViewport(); el.scrollIntoView({ block: 'center', behavior: 'auto' }); updateMainLabel(); }, 260);
+    setTimeout(() => { fitViewport(); el.scrollIntoView({ block: 'center', behavior: 'auto' }); }, 260);
   });
 
   /* ================= 全体 ================= */
@@ -844,27 +819,11 @@
       const m = e.target.closest('[data-menu]');
       if (m) openMenu(m.dataset.menu);
     });
-    $('#bb-main').onclick = () => {
-      if ($('#bb-main').dataset.mode === 'memo') { openMenu('memo'); return; }
-      const f = $('#pz-form'); if (!f) return;
-      if (!formVisible()) { // 謎が画面の外なら、まず謎まで連れていく（答えはまだ送らない）
-        $('.pz-card').scrollIntoView({ block: 'end', behavior: reduced() ? 'auto' : 'smooth' });
-        const first = $$('#pz-form input[type="text"]').find((i) => !i.value.trim());
-        if (first) setTimeout(() => first.focus({ preventScroll: true }), reduced() ? 0 : 350);
-        return;
-      }
-      f.requestSubmit ? f.requestSubmit() : f.dispatchEvent(new Event('submit', { cancelable: true }));
-    };
-    $('#scroll').addEventListener('scroll', () => { clearTimeout(bbT); bbT = setTimeout(updateMainLabel, 80); }, { passive: true });
     $('#scroll').addEventListener('scroll', () => { if (!$('#new-badge').hidden && nearBottom()) { newBadge(false); quietFeed = false; } }, { passive: true });
     $('#new-badge').addEventListener('click', () => { quietFeed = false; newBadge(false); const l = $('#feed').lastElementChild; if (l) l.scrollIntoView({ block: 'end', behavior: reduced() ? 'auto' : 'smooth' }); });
-    $('#bb-peek').onclick = () => openPinned();
+    $('#btn-pinpeek').onclick = () => openPinned();
     $('#btn-vpeek').onclick = () => { const t = $('#btn-vpeek').dataset.target; const cur = S.view.panes[activePane()].doc; if (!t) return; S.view.back = cur; openDoc(t); };
-    $('#btn-drawer').onclick = () => (drawerOpen() ? closeDrawer() : openDrawer());
-    $('#dw-close').onclick = () => closeDrawer();
-    $$('#drawer [data-dw]').forEach((b) => b.onclick = () => drawerTab(b.dataset.dw));
-    $('#dw-submit').onclick = () => { const f = $('#pz-form'); if (f) f.requestSubmit ? f.requestSubmit() : f.dispatchEvent(new Event('submit', { cancelable: true })); };
-    $('#memo2').addEventListener('input', () => { S.memo = $('#memo2').value; clearTimeout(memoTimer); memoTimer = setTimeout(save, 400); });
+    $('#btn-goans').onclick = goAnswer;
     $('#btn-pin').onclick = () => { const id = S.view.panes[activePane()].doc; if (!id) return; setPin(S.pin === id ? null : id); };
     $('#btn-zcycle').onclick = () => { const i = activePane(), z = S.view.panes[i].zoom; setZoom(i, z < 1.45 ? 1.5 : z < 1.95 ? 2 : 1); };
     $$('.vw-bar .zbtn').forEach((b) => b.onclick = () => { const i = activePane(); setZoom(i, S.view.panes[i].zoom + (b.dataset.z === '+' ? 0.25 : -0.25)); });

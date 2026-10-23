@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDMincho&family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@600&family=Shippori+Mincho+B1:wght@800&family=Zen+Maru+Gothic:wght@700&display=swap">
 <link rel="preload" as="image" href="assets/img/contact_sheet.jpg">
-<link rel="stylesheet" href="css/style.css?v=91">
-<link rel="stylesheet" href="css/theme.css?v=91">
+<link rel="stylesheet" href="css/style.css?v=92">
+<link rel="stylesheet" href="css/theme.css?v=92">
 </head>
 <body data-font="m">
 <a class="skip" href="#puzzle">いまの謎へ移動</a>
@@ -44,12 +44,12 @@
   </div>
 </section>
 
-<!-- メイン画面（上：見出し／まんなか：物語・資料・謎／下：答える） -->
+<!-- メイン画面（上：見出し／その下：物語・資料・謎。答えは謎のカードの中で） -->
 <section id="screen-game" class="screen app" hidden>
   <div class="col-main" id="col-main">
     <header class="topbar">
       <div class="tb-title"><span id="stage-label" class="tb-stage"></span><span id="objective-text" class="tb-obj"></span></div>
-      <button type="button" id="btn-menu" class="iconbtn" aria-haspopup="dialog" aria-label="メニュー（ヒント・メモ・前の資料・設定）"><span class="ic-menu" aria-hidden="true"><i></i><i></i><i></i></span></button>
+      <div class="tb-act"><button type="button" id="btn-pinpeek" class="iconbtn tb-pin" hidden><span class="pin-ic" aria-hidden="true"></span><span id="btn-pinpeek-t"></span></button><button type="button" id="btn-menu" class="iconbtn" aria-haspopup="dialog" aria-label="メニュー（ヒント・メモ・前の資料・設定）"><span class="ic-menu" aria-hidden="true"><i></i><i></i><i></i></span><span id="menu-badge" class="menu-badge" aria-hidden="true"></span></button></div>
     </header>
     <main class="scroll" id="scroll">
       <section class="feed" aria-label="莉々香からのメッセージ">
@@ -58,16 +58,11 @@
         <ol id="feed" class="msgs" aria-live="polite"></ol>
       </section>
       <section class="cards-sec" aria-labelledby="cards-h">
-        <h2 id="cards-h" class="sec-h">資料 <span id="cards-count"></span></h2>
+        <h2 id="cards-h" class="sr-only">資料 <span id="cards-count"></span></h2>
         <ul id="cards" class="cards"></ul>
       </section>
       <section id="puzzle" class="puzzle" tabindex="-1" aria-labelledby="pz-name"></section>
     </main>
-    <nav class="bottombar" aria-label="操作">
-      <button type="button" id="bb-hint" class="bb-btn" data-menu="hint"><span class="bb-ic" aria-hidden="true">？</span><span class="bb-t">ヒント</span></button>
-      <button type="button" id="bb-peek" class="bb-btn" hidden aria-pressed="false"><span class="bb-ic pin-ic" aria-hidden="true"></span><span class="bb-t" id="bb-peek-t">ちら見</span></button>
-      <button type="button" id="bb-main" class="bb-main btn primary">答える</button>
-    </nav>
   </div>
 
   <aside class="col-view" id="viewer" aria-label="資料ビューア">
@@ -76,19 +71,11 @@
       <button type="button" id="btn-compare" class="btn ghost sm vw-compare" aria-pressed="false">並べて見る</button>
     </div>
     <div id="panes" class="panes"></div>
-    <section id="drawer" class="drawer" hidden aria-label="答えとメモ">
-      <div class="dw-head">
-        <div class="dw-tabs" role="tablist" aria-label="引き出しの中身"><button type="button" role="tab" data-dw="pz" aria-selected="true">答え</button><button type="button" role="tab" data-dw="memo" aria-selected="false">メモ</button></div>
-        <button type="button" id="dw-close" class="iconbtn sm" aria-label="答えをしまって、資料を大きく見る">▾</button>
-      </div>
-      <div class="dw-body"><div id="dw-pz" class="dw-pane"></div><div id="dw-memo" class="dw-pane" hidden><label for="memo2" class="sr-only">メモ</label><textarea id="memo2" rows="6" placeholder="気づいたことを書いておけます（自動で保存）"></textarea></div></div>
-      <div id="dw-foot" class="dw-foot"><button type="button" id="dw-submit" class="btn primary">答える</button></div>
-    </section>
     <div class="vw-bar">
       <button type="button" id="btn-viewer-close" class="vb-btn vw-close">← もどる</button>
       <button type="button" id="btn-pin" class="vb-btn" aria-pressed="false"><span class="pin-ic" aria-hidden="true"></span><span class="vb-t" id="btn-pin-t">ピン</span></button>
       <button type="button" id="btn-vpeek" class="vb-btn" hidden>⇄</button>
-      <button type="button" id="btn-drawer" class="vb-btn vb-drawer" hidden aria-expanded="false" aria-controls="drawer">答え</button>
+      <button type="button" id="btn-goans" class="vb-btn vb-goans" hidden aria-label="資料を閉じて、答えの欄へ">答えへ</button>
       <button type="button" id="btn-zcycle" class="vb-btn zcycle" aria-label="拡大を切り替える（100%→150%→200%）">拡大 <span class="zc-v">100%</span></button>
       <div class="zoom" role="group" aria-label="拡大と縮小"><button type="button" class="zbtn" data-z="-" aria-label="縮小">−</button><span class="zval" aria-live="polite">100%</span><button type="button" class="zbtn" data-z="+" aria-label="拡大">＋</button></div>
     </div>
@@ -147,7 +134,7 @@
 <script src="js/answers.js"></script>
 <script src="js/tools.js"></script>
 <script src="assets/video/manifest.js"></script>
-<script src="js/play.js?v=91"></script>
-<script src="js/app.js?v=91"></script>
+<script src="js/play.js?v=92"></script>
+<script src="js/app.js?v=92"></script>
 </body>
 </html>

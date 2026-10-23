@@ -28,7 +28,6 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:300;b
 .ic-menu i{display:block;width:18px;height:2px;background:currentColor}
 .pin-ic{display:inline-block;position:relative;width:11px;height:11px;border-radius:50%;background:var(--grease);margin:0 2px 7px;vertical-align:middle;box-shadow:inset -2px -2px 0 rgba(0,0,0,.25)}
 .pin-ic::after{content:"";position:absolute;left:4.5px;top:10px;width:2px;height:7px;background:#9a9c96}
-.bb-ic{font-family:var(--title);font-size:1.15em;line-height:1.2}
 .chip span{border-color:#646a65;background:#2f3130}
 .chip input:checked + span{background:var(--dpe);color:#fff;border-color:var(--dpe)}
 
@@ -63,10 +62,6 @@ a.title-credit{color:var(--accent);text-underline-offset:3px}
 /* ---- 上と下のバー ---- */
 .topbar{background:var(--bg);border-bottom-color:#4a4e4b}
 .tb-stage{font-family:var(--title);color:var(--ink);letter-spacing:.06em}
-.bottombar{background:#272928;border-top-color:#4a4e4b}
-.bb-btn{background:transparent;border-color:#5c615c}
-.bb-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
-.bb-main{background:var(--dpe)!important;color:#fff!important;border-color:#3b665f!important}
 
 /* ---- 会話：莉々香のメモ紙 ---- */
 .msg p{border-radius:2px;background:var(--paper);color:var(--paper-ink);box-shadow:1px 2px 0 rgba(0,0,0,.28)}
@@ -147,3 +142,56 @@ dialog::backdrop{background:rgba(20,21,20,.72)}
 @media (prefers-reduced-motion:reduce){ .stamp{animation:none} }
 /* 穴あき手紙のます目は v9 と同じ字形・大きさのまま（読みやすさの基準） */
 .svg-letter .grid-k{font-family:"Zen Maru Gothic",var(--sans)}
+
+/* ===== v9.2 すっきり：下のバーをなくし、資料の面積を広く ===== */
+.topbar{padding-top:calc(4px + var(--sat));padding-bottom:4px}
+.tb-act{flex:none;display:flex;align-items:center;gap:6px}
+.topbar .iconbtn{min-width:44px;min-height:44px}
+#btn-menu{position:relative}
+.menu-badge{position:absolute;top:2px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font:700 11px/17px var(--sans);text-align:center;letter-spacing:0;pointer-events:none}
+.menu-badge[hidden],.menu-badge:empty{display:none}
+.tb-pin{font-size:.88em;padding:0 .55em;gap:.3em;font-weight:700}
+.tb-pin[hidden]{display:none}
+.scroll{padding-top:8px;padding-bottom:16px}
+/* 資料カード：小さく（番号と種類を1行に、説明は2行まで） */
+.cards{margin-top:6px;padding-bottom:6px}
+.card{width:134px;min-height:0;padding:7px 9px 8px;flex-direction:row;flex-wrap:wrap;align-content:flex-start;align-items:center;column-gap:6px;row-gap:1px}
+.card-ic{margin:0;font-size:.72em}
+.card-t,.card-s{flex-basis:100%}
+.card-t{font-size:15px;line-height:1.35}
+.card-s{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35}
+.badge-new{top:6px;right:6px}
+@media (min-width:900px){.card{width:132px;min-height:0}}
+.cards-sec{margin-bottom:10px}
+/* 謎のカード：答えの欄の横に「答える」 */
+.pz-card{padding:12px 12px 10px}
+.pz-name{margin-top:.1em;margin-bottom:.2em}
+.pz-q{margin-top:.2em;margin-bottom:.5em}
+.pz-form.one{display:flex;align-items:flex-end;gap:8px}
+.pz-form.one .fields{flex:1;min-width:0}
+.pz-go{flex:none;min-height:50px;padding:0 1.05em;font-size:1em;font-weight:700}
+.pz-form:not(.one) .pz-go{display:block;width:100%;margin-top:10px;min-height:46px}
+.pz-fb:empty{min-height:0;margin:0}
+.pz-fb{margin-top:.45em}
+.pz-hintnote{margin:.45em 0 0}
+.pz-foot:empty{display:none}
+.nudge.linkish{background:none;border:0;padding:0;min-height:40px;color:var(--accent);font:inherit;font-size:.92em;text-align:left;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+/* ビューア：見出しと下の操作を細く */
+.vw-head{padding-top:calc(4px + var(--sat));padding-bottom:4px;min-height:0}
+.vw-title{font-size:.95em}
+.vw-bar{padding-top:6px;padding-bottom:calc(6px + var(--sab));gap:6px}
+.vw-bar .vb-btn,.vw-bar .zbtn{min-height:44px}
+.vb-goans{background:transparent;color:var(--accent);border-color:var(--accent)}
+.vb-goans[hidden]{display:none}
+.pane-dock{padding-top:4px;padding-bottom:4px}
+.pane-dock .seg{min-height:42px}
+.pane-dock .fb-seg{margin-bottom:4px}
+.pane-dock .tool,.pane-dock .tool.big{min-height:42px}
+/* スマホ：資料名は上に固定せず、資料のいちばん上に（スクロールで消える） */
+.pane-cap{display:none}
+@media (max-width:899px){
+  .vw-head{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);padding:0;border:0}
+  .pane-cap{display:block;margin:0 0 6px;padding:2px 2px 0;font-size:15px;line-height:1.4;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pane-cap b{color:var(--ink);margin-right:.3em}
+  .viewer-open .pane-scroll{padding-top:6px}
+}
