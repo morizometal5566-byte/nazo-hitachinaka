@@ -251,7 +251,7 @@
     </div>
     <div class="fb-row">
       <span class="fold-state" aria-live="polite"><span class="fs-chip">ひらいた手紙</span></span>
-      <button type="button" class="tool" data-act="fsee" aria-pressed="true" aria-label="重ねた紙を少しすかして、下のます目も見る">🔦 すかす</button>
+      <button type="button" class="tool" data-act="fsee" aria-pressed="true" aria-label="重ねた紙を少しすかして、下のます目も見る">すかす</button>
       <button type="button" class="tool ghost" data-act="fmclear" aria-label="自分でつけた印をぜんぶ消す">印を消す</button>
       <button type="button" class="tool ghost fb-more-btn" data-act="fdiag" aria-expanded="false" aria-label="紙の動かし方の図">？</button>
     </div>

@@ -17,7 +17,7 @@
     return {
       v: 9, phase: 'title', stage: 0, step: 0, solved: {}, chat: [], read: [],
       fold: {}, ph: {}, ov: {}, dev: {}, dr: {}, fr: {}, trace: {}, neg: null, flags: {}, choice: null,
-      wrong: {}, hints: {}, drafts: {}, memo: '', pin: null, peek: false,
+      wrong: {}, hints: {}, drafts: {}, memo: '', pin: null, peek: false, zooms: {},
       settings: { font: 'm', contrast: false, motion: false, cb: false },
       view: { panes: [{ doc: null, zoom: 1 }, { doc: null, zoom: 1 }], compare: false, active: 0 },
       lastFb: null, savedAt: null,
@@ -342,7 +342,7 @@
       S.lastFb = { id: p.id, msg, cls: 'ng' }; save();
       renderPuzzle();
       const card = $('.pz-card'); if (card && !reduced()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); }
-      if (isPhone()) $('#pz-fb').scrollIntoView({ block: 'nearest' });
+      if (isPhone()) reveal($('#pz-fb'), 'nearest');
       return;
     }
     solve(p);
@@ -371,7 +371,7 @@
           if (!isClear()) {
             deliver(`s${S.stage}.start`, () => {
               const n = curDocs().length;
-              toast(`莉々香から資料が届きました（${n}件）`, { label: '資料を見る', fn: () => { const c = $('#cards .card'); if (c) { c.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); c.focus({ preventScroll: true }); } } });
+              toast(`莉々香から資料が届きました（${n}件）`, { label: '資料を見る', fn: () => { const c = $('#cards .card'); if (c) { reveal(c, 'nearest', true); c.focus({ preventScroll: true }); } } });
             });
           } else renderPuzzle();
         });
@@ -391,6 +391,24 @@
     deliver(`s${STAGES.length}.${c}`, () => { if (S.flags.yellow) deliver(`s${STAGES.length}.yellow`, then); else then(); });
   }
 
+  /* ================= #scroll の中だけを動かして見せる（scrollIntoView は使わない：iOS で外の枠まで動いて、上のバーが消えることがある） ================= */
+  function reveal(el, block, smooth) {
+    const sc = $('#scroll'); if (!el || !sc || !sc.contains(el)) return;
+    for (let p = el.parentElement; p && p !== sc; p = p.parentElement) { // 横に流れる資料カードの列など
+      if (p.scrollWidth > p.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(p).overflowX)) {
+        const a = el.getBoundingClientRect(), b = p.getBoundingClientRect();
+        if (a.left < b.left) p.scrollLeft += a.left - b.left - 8; else if (a.right > b.right) p.scrollLeft += a.right - b.right + 8;
+      }
+    }
+    const a = el.getBoundingClientRect(), b = sc.getBoundingClientRect();
+    let d = 0;
+    if (block === 'center') d = (a.top + a.height / 2) - (b.top + b.height / 2);
+    else if (block === 'end') d = a.bottom - b.bottom + 8;
+    else d = a.top < b.top ? a.top - b.top - 8 : a.bottom > b.bottom ? a.bottom - b.bottom + 8 : 0;
+    if (Math.abs(d) < 1) return;
+    if (smooth && !reduced()) sc.scrollBy({ top: d, behavior: 'smooth' }); else sc.scrollTop += d;
+  }
+
   /* ================= ビューア ================= */
   function paneCount() { return S.view.compare && !isPhone() ? 2 : 1; }
   function activePane() { return paneCount() === 2 ? S.view.active : 0; }
@@ -398,7 +416,7 @@
   function rememberView() {
     $$('#panes .pane').forEach((el) => {
       const pn = S.view.panes[+el.dataset.pane]; const sc = $('.pane-scroll', el);
-      if (pn && pn.doc && sc && el.dataset.doc === pn.doc) docView[pn.doc] = { z: pn.zoom, t: sc.scrollTop, l: sc.scrollLeft };
+      if (pn && pn.doc && sc && el.dataset.doc === pn.doc) docView[pn.doc] = { z: pn.zoom, fit: !!pn.fit, t: sc.scrollTop, l: sc.scrollLeft };
     });
   }
   function renderPanes() {
@@ -420,7 +438,20 @@
     }
     wrap.innerHTML = html;
     // 手紙の道具（折る・裏返す・図）は、拡大しない下の道具バーへ。シートは画面いっぱいに使う
-    $$('.pane', wrap).forEach((el) => { const bar = $('.doc-zoom .fold-bar', el); if (bar) { bar.classList.add('pane-dock'); el.appendChild(bar); } });
+    // スマホ：資料の道具は、下の1行のバー（#vb-slot）へ。めったに使わないもの（すかす・印を消す・図）は「…」の中へ
+    const slot = $('#vb-slot'), vmDoc = $('#vm-doc'); slot.innerHTML = ''; vmDoc.innerHTML = '';
+    $$('.pane', wrap).forEach((el) => {
+      const bar = $('.doc-zoom .fold-bar', el); if (!bar) return;
+      if (isPhone() && n === 1) {
+        const rest = document.createElement('div'); rest.className = 'fold-bar vm-fold'; rest.dataset.foldBar = bar.dataset.foldBar;
+        $$('.fb-row, .fb-more', bar).forEach((x) => rest.appendChild(x));
+        const SHORT = { open: 'ひらく', omote: '表', ura: '裏' };
+        $$('[data-act="fstate"]', bar).forEach((b) => { b.setAttribute('aria-label', b.textContent.trim()); if (SHORT[b.dataset.v]) b.textContent = SHORT[b.dataset.v]; });
+        { const dg = $('[data-act="fdiag"]', rest); if (dg) dg.textContent = '紙の動かし方（図）'; }
+        bar.classList.add('vb-fold'); slot.appendChild(bar); vmDoc.appendChild(rest);
+      } else { bar.classList.add('pane-dock'); el.appendChild(bar); }
+    });
+    $('.vw-bar').classList.toggle('has-slot', !!slot.firstChild);
     $$('.pane', wrap).forEach(bindPane);
     $$('.pane', wrap).forEach((el) => {
       const pn = S.view.panes[+el.dataset.pane]; const v = pn && docView[pn.doc]; const sc = $('.pane-scroll', el);
@@ -428,12 +459,13 @@
     });
     renderViewerBar();
     applyPhotos(); applyFolds(); window.TOOLS.apply(wrap);
+    $$('.pane', wrap).forEach((el) => { applyZoom(+el.dataset.pane); $$('img', el).forEach((im) => { if (!im.complete) im.addEventListener('load', refitDocs, { once: true }); }); });
   }
   function renderViewerBar() {
     const pn = S.view.panes[activePane()];
     const d = pn.doc && DOCS[pn.doc];
     $('#vw-title').textContent = paneCount() === 2 ? '資料を並べて見る' : d ? `${d.no} ${d.title}` : '資料';
-    $('.vw-bar .zval').textContent = Math.round(pn.zoom * 100) + '%'; $('.zc-v').textContent = Math.round(pn.zoom * 100) + '%';
+    zoomLabel(pn);
     const pin = $('#btn-pin');
     pin.hidden = !d;
     const pinned = d && S.pin === pn.doc;
@@ -445,13 +477,69 @@
     vp.hidden = !target;
     if (target) { vp.dataset.target = target; vp.textContent = `⇄ ${target === S.pin ? '［ピン］' : ''}${target}`; vp.setAttribute('aria-label', `${target} ${DOCS[target].title} に切り替える（拡大とスクロールはそのまま）`); }
     const ga = $('#btn-goans'); if (ga) ga.hidden = !isPhone() || isClear() || !d;
+    // 「…」の中身があるときだけ「…」を出す（ないときは、ピンなどを1行にそのまま並べる）
+    const bar = $('.vw-bar'), more = $('#btn-more');
+    const inMenu = bar.classList.contains('has-slot');
+    more.hidden = !inMenu || !isPhone();
+    bar.classList.toggle('menu-mode', inMenu && isPhone());
+    if (!inMenu) setMore(false);
+  }
+  function setMore(open) {
+    const m = $('#vw-more'), b = $('#btn-more'); if (!m || !b) return;
+    m.classList.toggle('open', !!open); b.setAttribute('aria-expanded', String(!!open));
+  }
+  /* ---- 倍率：ボタンは小さくするだけ（100%→85%→70%→全体）。大きくするのはピンチで ---- */
+  const ZSTEPS = [1, 0.85, 0.7, 'fit'];
+  function zoomLabel(pn) {
+    const t = pn.fit ? '全体' : Math.round(pn.zoom * 100) + '%';
+    $('.vw-bar .zval').textContent = Math.round(pn.zoom * 100) + '%'; $('.zc-v').textContent = t;
+    $('#btn-zcycle').setAttribute('aria-label', `資料の大きさ：いま${t}。タップで小さく（100%→85%→70%→全体）`);
+  }
+  function fitScale(el) { // 資料ぜんぶが、いまの画面に収まる倍率（大きくはしない）
+    const sc = $('.pane-scroll', el), dz = $('.doc-zoom', el); if (!sc || !dz) return 1;
+    const cs = getComputedStyle(sc), cap = $('.pane-cap', el);
+    const w = sc.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    let hAv = sc.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 2;
+    if (cap && cap.offsetParent) { const cm = getComputedStyle(cap); hAv -= cap.offsetHeight + parseFloat(cm.marginTop) + parseFloat(cm.marginBottom); }
+    const z0 = dz.style.zoom, w0 = dz.style.width;
+    dz.style.zoom = 1; dz.style.width = w + 'px';
+    const nw = dz.scrollWidth, nh = dz.getBoundingClientRect().height;
+    dz.style.zoom = z0; dz.style.width = w0;
+    if (!nh || !nw || hAv < 50) return 1;
+    return Math.max(0.2, Math.min(1, Math.floor(Math.min(hAv / nh, w / nw) * 100) / 100));
+  }
+  function applyZoom(i) {
+    const pn = S.view.panes[i]; const el = $(`.pane[data-pane="${i}"]`);
+    if (el) {
+      const dz = $('.doc-zoom', el), sc = $('.pane-scroll', el);
+      if (dz && sc) {
+        if (pn.fit) pn.zoom = fitScale(el);
+        const cs = getComputedStyle(sc), w = sc.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        // 小さくするときは、文字を詰め直さず、紙ごと縮める（写真のように）
+        if (pn.zoom < 1) { dz.style.width = Math.floor(w) + 'px'; dz.style.marginLeft = dz.style.marginRight = 'auto'; } else { dz.style.width = ''; dz.style.marginLeft = dz.style.marginRight = ''; }
+        dz.style.zoom = pn.zoom;
+        el.classList.toggle('is-fit', !!pn.fit);
+      }
+    }
+    if (i === activePane()) zoomLabel(pn);
+  }
+  function refitDocs() { if (!S || !S.view) return; S.view.panes.forEach((pn, i) => { if (pn.fit && $(`.pane[data-pane="${i}"] .doc-zoom`)) applyZoom(i); }); }
+  function storeZoom(pn) { if (!pn.doc) return; S.zooms = S.zooms || {}; S.zooms[pn.doc] = pn.fit ? 'fit' : pn.zoom; }
+  function setFit(i) {
+    const pn = S.view.panes[i]; pn.fit = true; applyZoom(i); storeZoom(pn);
+    const sc = $(`.pane[data-pane="${i}"] .pane-scroll`); if (sc) { sc.scrollTop = 0; sc.scrollLeft = 0; }
+    save();
+  }
+  function cycleZoom() {
+    const i = activePane(), pn = S.view.panes[i], z = pn.zoom;
+    const next = pn.fit ? 1 : z > 1.01 ? 1 : z > 0.92 ? 0.85 : z > 0.77 ? 0.7 : z > 0.6 ? 'fit' : 1;
+    if (next === 'fit') setFit(i); else { setZoom(i, next); const sc = $(`.pane[data-pane="${i}"] .pane-scroll`); if (sc && next === 1 && z > 1.01) sc.scrollLeft = 0; }
   }
   function setZoom(i, z) {
     const pn = S.view.panes[i];
-    pn.zoom = Math.round(Math.max(0.5, Math.min(3, z)) * 100) / 100;
-    const el = $(`.pane[data-pane="${i}"]`);
-    if (el) { const dz = $('.doc-zoom', el); if (dz) dz.style.zoom = pn.zoom; }
-    if (i === activePane()) { $('.vw-bar .zval').textContent = Math.round(pn.zoom * 100) + '%'; $('.zc-v').textContent = Math.round(pn.zoom * 100) + '%'; }
+    pn.fit = false;
+    pn.zoom = Math.round(Math.max(0.2, Math.min(3, z)) * 100) / 100;
+    applyZoom(i); storeZoom(pn);
     save();
   }
   function bindPane(el) {
@@ -459,7 +547,7 @@
     const sc = $('.pane-scroll', el);
     el.addEventListener('pointerdown', () => { if (paneCount() === 2 && S.view.active !== i) { S.view.active = i; $$('.pane').forEach((p) => p.classList.toggle('active', +p.dataset.pane === i)); save(); renderViewerBar(); } }, true);
     const sel = $('.pane-sel', el);
-    if (sel) sel.onchange = () => { if (sel.value) { S.view.panes[i].doc = sel.value; S.view.panes[i].zoom = 1; S.view.active = i; markRead(sel.value); save(); renderPanes(); renderCards(); renderPeek(); } };
+    if (sel) sel.onchange = () => { if (sel.value) { S.view.panes[i].doc = sel.value; Object.assign(S.view.panes[i], zoomOf(sel.value)); S.view.active = i; markRead(sel.value); save(); renderPanes(); renderCards(); renderPeek(); } };
     if (!sc) return;
     sc.addEventListener('wheel', (e) => { if (!e.ctrlKey) return; e.preventDefault(); setZoom(i, S.view.panes[i].zoom * Math.exp(-Math.max(-60, Math.min(60, e.deltaY)) * 0.004)); }, { passive: false });
     sc.addEventListener('keydown', (e) => {
@@ -476,8 +564,10 @@
       setZoom(i, z); const z1 = S.view.panes[i].zoom;
       sc.scrollLeft = px * z1 - (cx - r.left); sc.scrollTop = py * z1 - (cy - r.top);
     };
+    // ダブルタップ：全体 ⇄ 100%
+    const dblZoom = (cx, cy) => { const pn = S.view.panes[i]; if (pn.fit || pn.zoom < 0.99) zoomAt(1, cx, cy); else setFit(i); };
     let lastTouch = 0;
-    sc.addEventListener('dblclick', (e) => { if (Date.now() - lastTouch < 900) return; if (e.target.closest(NOZOOM)) return; zoomAt(S.view.panes[i].zoom >= 1.5 ? 1 : 2, e.clientX, e.clientY); });
+    sc.addEventListener('dblclick', (e) => { if (Date.now() - lastTouch < 900) return; if (e.target.closest(NOZOOM)) return; dblZoom(e.clientX, e.clientY); });
     // ピンチ（2本指）とダブルタップ
     const pts = new Map(); let startD = 0, startZ = 1, tap = null, moved = false;
     const dist = () => { const a = [...pts.values()]; return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
@@ -487,19 +577,24 @@
     const up = (e) => {
       if (e.type === 'pointerup' && e.pointerType === 'touch' && pts.size === 1 && !moved && !e.target.closest(NOZOOM)) {
         const now = Date.now();
-        if (tap && now - tap.t < 320 && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 30) { zoomAt(S.view.panes[i].zoom >= 1.5 ? 1 : 2, e.clientX, e.clientY); tap = null; }
+        if (tap && now - tap.t < 320 && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 30) { dblZoom(e.clientX, e.clientY); tap = null; }
         else tap = { t: now, x: e.clientX, y: e.clientY };
       }
       pts.delete(e.pointerId); if (pts.size < 2) startD = 0;
     };
     sc.addEventListener('pointerup', up); sc.addEventListener('pointercancel', up);
   }
+  function zoomOf(id) { // 資料ごとに、前の大きさを覚えておく
+    if (docView[id]) return { zoom: docView[id].z, fit: !!docView[id].fit };
+    const z = S.zooms && S.zooms[id];
+    return z === 'fit' ? { zoom: 1, fit: true } : { zoom: typeof z === 'number' ? z : 1, fit: false };
+  }
   function markRead(id) { if (!S.read.includes(id)) S.read.push(id); }
   function openDoc(id) {
     if (!DOCS[id] || !unlockedDocs().includes(id)) return;
     const v = S.view;
     const i = activePane();
-    if (v.panes[i].doc !== id) { rememberView(); v.panes[i].doc = id; v.panes[i].zoom = docView[id] ? docView[id].z : 1; }
+    if (v.panes[i].doc !== id) { rememberView(); v.panes[i].doc = id; Object.assign(v.panes[i], zoomOf(id)); }
     markRead(id); save();
     renderPanes(); renderCards();
     if (isPhone()) {
@@ -518,17 +613,18 @@
   /* ================= 資料から、答えの欄へ（スマホ。答えは謎のカードの1か所だけ） ================= */
   function goAnswer() {
     closeViewer(false);
-    setTimeout(() => {
-      const card = $('#puzzle .pz-card'); if (!card) return;
-      card.scrollIntoView({ block: 'center', behavior: 'auto' });
-      const first = $$('#pz-form input[type="text"]').find((x) => !x.value.trim()) || $('#pz-form input');
-      if (first) first.focus({ preventScroll: true });
-    }, 60);
+    resetFrames();
+    const card = $('#puzzle .pz-card');
+    const first = $$('#pz-form input[type="text"]').find((x) => !x.value.trim()) || $('#pz-form input');
+    // タップの中ですぐにフォーカス（iOS は、あとからのフォーカスだとキーボードが出なかったり、画面の高さがずれたりする）
+    if (first) first.focus({ preventScroll: true });
+    if (card) reveal(card, 'center');
+    [120, 450].forEach((t) => setTimeout(() => { fitViewport(); if (card && card.isConnected) reveal(first && document.activeElement === first ? first : card, 'center'); }, t));
   }
   let pendingBack = false, wantPush = false;
   function closeViewer(fromPop) {
     if (!viewerOpen()) return;
-    rememberView();
+    rememberView(); setMore(false);
     document.body.classList.remove('viewer-open');
     if (!fromPop && history.state && history.state.vw) { pendingBack = true; try { history.back(); } catch (e) { pendingBack = false; } }
     renderPeek();
@@ -627,6 +723,7 @@
       const h = doc.querySelector('.fold-handle'); if (h) h.setAttribute('aria-label', f ? '手紙をひらく' : '点線で折る');
       const live = doc.querySelector('.fold-live'); if (live) live.textContent = f ? (fl ? '上半分を切り取って裏返し、重ねました（裏）。' : '上半分を折って重ねました（表）。') + '穴から下の字が見えています。穴のそばに漢字があります。' : '';
     });
+    requestAnimationFrame(refitDocs); // 折ると紙の高さが変わる →「全体」を計り直す
   }
   function setFold(id, v) {
     if (!!S.fold[id] === v) return;
@@ -775,19 +872,33 @@
   }
 
   /* ================= 画面の高さ（キーボードが出ても、答える欄とボタンが隠れない） ================= */
-  function fitViewport() {
-    const vv = window.visualViewport;
-    const h = vv ? vv.height : window.innerHeight;
-    document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
-    document.documentElement.style.setProperty('--app-top', Math.round(vv ? vv.offsetTop : 0) + 'px');
-    document.body.classList.toggle('kb-open', !!vv && window.innerHeight - vv.height > 120);
+  // iOS Safari：キーボードが閉じても visualViewport の resize が来ない・途中の値で止まることがある。
+  // 入力欄にフォーカスがないとき＝キーボードは出ていない、とみなして、いつも画面いっぱいにもどす。
+  const typing0 = () => { const a = document.activeElement; return !!a && !!a.matches && a.matches('input:not([type]),input[type="text"],input[type="search"],textarea,[contenteditable="true"]'); };
+  function resetFrames() { // 枠（overflow:hidden）は動かないはず。ブラウザが動かしてしまったら、もどす
+    ['.app', '.col-main', '.col-view', '#screen-game'].forEach((q) => { const e = $(q); if (e && (e.scrollTop || e.scrollLeft)) { e.scrollTop = 0; e.scrollLeft = 0; } });
   }
+  function fitViewport() {
+    const vv = window.visualViewport, full = window.innerHeight;
+    const kb = !!vv && typing0() && full - vv.height > 120;
+    const h = kb ? vv.height : full, top = kb ? vv.offsetTop : 0;
+    document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
+    document.documentElement.style.setProperty('--app-top', Math.max(0, Math.round(top)) + 'px');
+    document.body.classList.toggle('kb-open', kb);
+    if (!kb && (window.scrollY || window.scrollX)) window.scrollTo(0, 0);
+    resetFrames();
+    refitDocs();
+  }
+  const fitSoon = () => [0, 120, 350, 800].forEach((t) => setTimeout(fitViewport, t));
   if (window.visualViewport) { visualViewport.addEventListener('resize', fitViewport); visualViewport.addEventListener('scroll', fitViewport); }
   window.addEventListener('resize', fitViewport);
+  window.addEventListener('orientationchange', fitSoon);
+  window.addEventListener('pageshow', fitSoon);
+  document.addEventListener('focusout', (e) => { if (e.target && e.target.matches && e.target.matches('input,textarea')) fitSoon(); });
   document.addEventListener('focusin', (e) => {
     const el = e.target;
     if (!el.matches || !el.matches('#puzzle input[type="text"]') || !isPhone()) return;
-    setTimeout(() => { fitViewport(); el.scrollIntoView({ block: 'center', behavior: 'auto' }); }, 260);
+    setTimeout(() => { fitViewport(); if (document.activeElement === el) reveal(el, 'center'); }, 260);
   });
 
   /* ================= 全体 ================= */
@@ -820,12 +931,16 @@
       if (m) openMenu(m.dataset.menu);
     });
     $('#scroll').addEventListener('scroll', () => { if (!$('#new-badge').hidden && nearBottom()) { newBadge(false); quietFeed = false; } }, { passive: true });
-    $('#new-badge').addEventListener('click', () => { quietFeed = false; newBadge(false); const l = $('#feed').lastElementChild; if (l) l.scrollIntoView({ block: 'end', behavior: reduced() ? 'auto' : 'smooth' }); });
+    $('#new-badge').addEventListener('click', () => { quietFeed = false; newBadge(false); const l = $('#feed').lastElementChild; if (l) reveal(l, 'end', true); });
     $('#btn-pinpeek').onclick = () => openPinned();
     $('#btn-vpeek').onclick = () => { const t = $('#btn-vpeek').dataset.target; const cur = S.view.panes[activePane()].doc; if (!t) return; S.view.back = cur; openDoc(t); };
     $('#btn-goans').onclick = goAnswer;
     $('#btn-pin').onclick = () => { const id = S.view.panes[activePane()].doc; if (!id) return; setPin(S.pin === id ? null : id); };
-    $('#btn-zcycle').onclick = () => { const i = activePane(), z = S.view.panes[i].zoom; setZoom(i, z < 1.45 ? 1.5 : z < 1.95 ? 2 : 1); };
+    $('#btn-zcycle').onclick = cycleZoom;
+    $('#btn-more').onclick = (e) => { e.stopPropagation(); setMore(!$('#vw-more').classList.contains('open')); };
+    document.addEventListener('pointerdown', (e) => { const m = $('#vw-more'); if (m && m.classList.contains('open') && !e.target.closest('#vw-more, #btn-more')) setMore(false); }, true);
+    $('#vw-more').addEventListener('click', (e) => { if (e.target.closest('#btn-pin, #btn-vpeek')) setMore(false); });
+    ['.app', '.col-main'].forEach((q) => { const el = $(q); if (el) el.addEventListener('scroll', resetFrames, { passive: true }); });
     $$('.vw-bar .zbtn').forEach((b) => b.onclick = () => { const i = activePane(); setZoom(i, S.view.panes[i].zoom + (b.dataset.z === '+' ? 0.25 : -0.25)); });
     $('#btn-older').onclick = () => { const o = $('#feed-old'); o.hidden = !o.hidden; renderFeed(); };
     $('#btn-viewer-close').onclick = () => closeViewer(false);

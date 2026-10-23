@@ -26,8 +26,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:300;b
 .iconbtn{border-color:#5f645f}
 .ic-menu{display:inline-flex;flex-direction:column;gap:4px}
 .ic-menu i{display:block;width:18px;height:2px;background:currentColor}
-.pin-ic{display:inline-block;position:relative;width:11px;height:11px;border-radius:50%;background:var(--grease);margin:0 2px 7px;vertical-align:middle;box-shadow:inset -2px -2px 0 rgba(0,0,0,.25)}
-.pin-ic::after{content:"";position:absolute;left:4.5px;top:10px;width:2px;height:7px;background:#9a9c96}
+.pin-ic{display:inline-block;width:18px;height:18px;flex:none;vertical-align:middle;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 2h6v2l-1 1v5l3 3v2h-4v7l-1 1-1-1v-7H7v-2l3-3V5L9 4z' fill='%23000'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 2h6v2l-1 1v5l3 3v2h-4v7l-1 1-1-1v-7H7v-2l3-3V5L9 4z' fill='%23000'/%3E%3C/svg%3E") center/contain no-repeat}
 .chip span{border-color:#646a65;background:#2f3130}
 .chip input:checked + span{background:var(--dpe);color:#fff;border-color:var(--dpe)}
 
@@ -195,3 +194,51 @@ dialog::backdrop{background:rgba(20,21,20,.72)}
   .pane-cap b{color:var(--ink);margin-right:.3em}
   .viewer-open .pane-scroll{padding-top:6px}
 }
+
+/* ===== v9.3 ビューアの下は1行だけ・小さくする倍率・iOS の高さずれ対策 ===== */
+.app,.col-main{overflow:hidden;overflow:clip}
+body:has(#screen-game:not([hidden])){overflow:hidden;overscroll-behavior:none}
+.badge-pin.pin-ic{width:15px;height:15px;color:var(--accent)}
+.ic-back{display:inline-block;width:11px;height:11px;border-left:2.5px solid currentColor;border-bottom:2.5px solid currentColor;transform:rotate(45deg);margin:0 .15em 0 .3em}
+.ic-dots{display:inline-flex;gap:4px;align-items:center}
+.ic-dots i{display:block;width:5px;height:5px;border-radius:50%;background:currentColor}
+.vw-more{display:contents}
+.vm-doc:empty{display:none}
+.vb-more[hidden],#btn-vpeek[hidden]{display:none}
+.vb-slot{display:none}
+.fold-state{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.vw-bar .zcycle{min-width:56px;font-variant-numeric:tabular-nums}
+.vw-close{display:inline-flex;align-items:center;gap:.3em}
+@media (max-width:899px){
+  .vw-bar{position:relative;flex-wrap:nowrap;gap:4px;padding:3px max(6px,var(--sar)) calc(3px + var(--sab)) max(6px,var(--sal))}
+  .vw-bar .vb-btn{min-height:42px;padding:0 .45em;font-size:15px;display:inline-flex;align-items:center;justify-content:center}
+  .vw-bar .vw-close{min-width:42px;padding:0}
+  .vw-close .vb-t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .vw-bar .zcycle{margin-left:0;min-width:50px;padding:0 .3em}
+  .vw-bar .vb-pin{min-width:42px;padding:0}
+  .vw-bar .vb-more{min-width:42px;padding:0}
+  .vb-slot{display:flex;flex:1 1 auto;min-width:0}
+  .vb-fold{display:flex;flex:1;min-width:0;margin:0;padding:0;border:0;background:none}
+  .vb-fold .fb-seg{display:flex;flex:1;min-width:0;margin:0;border:1px solid #888;border-radius:var(--r);overflow:hidden}
+  .vb-fold .seg{flex:1 1 auto;min-width:40px;min-height:42px;border:0;border-left:1px solid #666;background:#2f333a;color:#f1ede4;font:700 15px var(--sans);padding:0 .15em;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+  .vb-fold .seg:first-child{border-left:0}
+  .vb-fold .seg[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+  /* 「…」の中（すかす・印を消す・図・ピン） */
+  .vw-bar.menu-mode .vw-more{display:none;position:absolute;right:max(8px,var(--sar));bottom:calc(100% + 6px);z-index:5;flex-direction:column;align-items:stretch;gap:6px;width:min(300px,calc(100vw - 16px));max-height:min(62vh,calc(var(--app-h,100dvh) - 120px));overflow:auto;padding:8px;background:#23262c;border:1px solid #5f645f;border-radius:var(--r);box-shadow:3px 4px 0 rgba(0,0,0,.45)}
+  .vw-bar.menu-mode .vw-more.open{display:flex}
+  .vw-bar.menu-mode .vw-more .vb-btn{width:100%;justify-content:flex-start;gap:.5em;padding:0 .8em}
+  .vw-bar.menu-mode #btn-pin .vb-t{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+  .vm-fold{display:block;margin:0}
+  .vm-fold .fb-row{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+  .vm-fold .tool,.vm-fold .tool.big{width:100%;min-height:44px;text-align:left;font-size:15px;padding:0 .8em;white-space:nowrap}
+  .vm-fold .tool.ghost{color:#eee;border-color:#888;background:transparent}
+  .vm-fold .tool[data-act="fsee"][aria-pressed="true"]{background:#f6e7b8;color:#2b2416}
+  .vm-fold .tool:disabled{opacity:.45}
+  .vm-fold .tool[hidden]{display:none}
+  .vm-fold .fb-more{padding-top:6px}
+  .vm-fold .fs-t,.vm-fold .fold-help{font-size:15px;line-height:1.55;color:#e9e2d2;margin:0 0 6px}
+  .vm-fold .fold-diagram{max-width:100%}
+  .viewer-open .pane-scroll{padding:4px 4px 6px}
+  .pane-cap{margin-bottom:4px}
+}
+.svg-letter text,.fold-diagram text{font-variant-emoji:text}
