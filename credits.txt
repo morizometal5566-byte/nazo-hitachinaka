@@ -1,0 +1,20 @@
+十九年目のネガ ― クレジット（v9.1）
+
+■ 写真素材（映像・ベタ焼きのコラージュに使用）
+すべて Wikimedia Commons 上で CC0（パブリックドメイン提供）として公開されているものです。
+加工（切り抜き・トリミング・色調変更・合成）を行っています。
+
+- Snowy_night_in_Noshiro_20231220b.jpg　撮影：掬茶　（CC0）
+- Level_crossing_in_Ninose（踏切）　撮影：Hahifuheho　（CC0）
+- Hoshi-imo_001.jpg（干し芋）　撮影：Ocdp　（CC0）
+- JR_Iida_line_Nakaizawa_Level_Crossing_20200224　撮影：先従隗始　（CC0）
+- Tekniska museet DSC01436（パラフィンの暗室ランプ）　撮影：Daderot　（CC0）
+
+■ それ以外
+切り絵のアニメーション、ベタ焼き、紙・粒子のテクスチャ、猫の線画は、
+このゲームのためにプログラムで一枚ずつ組み立てたものです（画像生成AIは使っていません）。
+
+■ フォント（Google Fonts / SIL Open Font License）
+Shippori Mincho B1、BIZ UDMincho、BIZ UDPGothic、Klee One
+
+登場する人物・団体・店名はすべて架空です。

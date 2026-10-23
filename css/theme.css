@@ -1,108 +1,149 @@
-/* 十九年目のネガ v8 テーマ「ちょっと不気味で、ちょっとかわいい」
-   style.css の上に重ねるだけ（謎・資料SVGの見た目は変えない）。art/art_direction.md v2 準拠 */
+/* v9.1 美術：「ベタ焼きと現像袋」
+   定着液のグレー・印画紙の白・DPE袋の青緑・赤のダーマトグラフ・スタンプの紺。
+   角はほぼ直角、グラデーションとぼかし影は使わない。 */
 :root{
-  --bg:#1b2238; --bg2:#212a44; --panel:#28324f; --line:#3c4870; --ink:#fbf8f1; --muted:#c3bfd0;
-  --accent:#f0b45a; --accent-ink:#3a2408; --info:#8cc7bf;
-  --paper:#f6efdf; --paper-ink:#2b2320;
-  --seafoam:#8cc7bf; --rose:#d0605e; --rose-d:#a8443f; --pencil:#35598f; --amber-d:#c98a32;
-  --sans:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",system-ui,sans-serif;
-  --serif:"BIZ UDMincho","Hiragino Mincho ProN","Noto Serif JP","Yu Mincho",serif;
+  --bg:#2b2d2c; --bg2:#303231; --panel:#363937; --line:#555a56; --ink:#eeeee6; --muted:#b3b5ad;
+  --accent:#8fbab2; --accent-ink:#10201d; --ok:#9fd0a4; --ng:#f2a093; --info:#a9c8e8;
+  --paper:#eeeee6; --paper-ink:#232523;
+  --dpe:#4a7c74; --dpe2:#5d8c86; --grease:#c4302b; --stampink:#233a5e;
+  --sans:"BIZ UDPGothic","Hiragino Sans","Noto Sans CJK JP","Noto Sans JP","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  --serif:"BIZ UDMincho","Hiragino Mincho ProN","Noto Serif CJK JP","Noto Serif JP","Yu Mincho",serif;
   --title:"Shippori Mincho B1",var(--serif);
   --hand:"Klee One","Klee",var(--sans);
-  --r:16px;
+  --r:3px;
 }
-body{background:radial-gradient(130% 70% at 50% 0%,#2b3858 0%,var(--bg) 60%) fixed var(--bg)}
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:300;opacity:.06;background:url(../assets/img/grain.png);mix-blend-mode:overlay}
+body{background-color:var(--bg)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:300;background:url(../assets/img/grain.png);opacity:.07;mix-blend-mode:overlay}
+::selection{background:var(--dpe2);color:#fff}
 
-/* ボタン：丸く、押すと沈む */
-.btn{border-radius:999px;font-weight:700;letter-spacing:.04em}
-.btn.primary{background:linear-gradient(#f6c472,var(--accent));border-color:var(--amber-d);box-shadow:0 3px 0 var(--amber-d);transition:transform .1s,box-shadow .1s}
-.btn.primary:active{transform:translateY(2px);box-shadow:0 1px 0 var(--amber-d)}
-.btn.ghost{border-color:rgba(251,248,241,.45)}
-.iconbtn{border-radius:999px;background:rgba(255,255,255,.06)}
-.tool{border-radius:999px}
-.tool.big{background:var(--rose);border-color:var(--rose-d);box-shadow:0 3px 0 var(--rose-d)}
+/* ---- ボタン：DPE袋の青緑、平ら ---- */
+.btn,.iconbtn,.bb-btn,.vb-btn,.zbtn,.tool,.doc-chip,.arch-item,.chip span,.tabs [role="tab"],.steps li,.new-badge,.toast{border-radius:var(--r)}
+.btn{border-color:#646a65;background:var(--panel);letter-spacing:.04em}
+.btn.primary{background:var(--dpe);color:#fff;border-color:#3b665f}
+.btn.primary:hover{background:var(--dpe2)}
+.btn.primary:active{background:#3f6c65}
+.btn.ghost{background:transparent;border-color:#7b807b}
+.iconbtn{border-color:#5f645f}
+.ic-menu{display:inline-flex;flex-direction:column;gap:4px}
+.ic-menu i{display:block;width:18px;height:2px;background:currentColor}
+.pin-ic{display:inline-block;position:relative;width:11px;height:11px;border-radius:50%;background:var(--grease);margin:0 2px 7px;vertical-align:middle;box-shadow:inset -2px -2px 0 rgba(0,0,0,.25)}
+.pin-ic::after{content:"";position:absolute;left:4.5px;top:10px;width:2px;height:7px;background:#9a9c96}
+.bb-ic{font-family:var(--title);font-size:1.15em;line-height:1.2}
+.chip span{border-color:#646a65;background:#2f3130}
+.chip input:checked + span{background:var(--dpe);color:#fff;border-color:var(--dpe)}
 
-/* タイトル：キービジュアル＋ポジ */
-#screen-title{position:relative;isolation:isolate;overflow:hidden;align-items:flex-end;background:var(--bg);padding-top:52vh}
-.title-kv{position:absolute;left:0;right:0;top:0;height:78vh;z-index:-2}
-.title-kv img{width:100%;height:100%;object-fit:cover;object-position:50% 30%}
-#screen-title::before{content:"";position:absolute;left:0;right:0;top:0;height:78vh;z-index:-1;background:linear-gradient(180deg,rgba(27,34,56,0) 35%,rgba(27,34,56,.75) 72%,var(--bg) 100%)}
-.title-posi{position:absolute;right:-6px;top:30vh;width:92px;z-index:1;filter:drop-shadow(0 4px 8px rgba(0,0,0,.45));animation:posi-peek 4.5s ease-in-out infinite}
-@keyframes posi-peek{0%,70%,100%{transform:translateX(0) rotate(-8deg)}80%{transform:translateX(-10px) rotate(-3deg)}}
-.title-inner{text-align:left;position:relative}
-.title-case{margin:0;font-family:ui-monospace,Menlo,monospace;font-size:.75em;letter-spacing:.2em;color:var(--seafoam)}
-.title-kicker{color:#ebe0c9;letter-spacing:.24em;font-size:.9em}
-#title-h{font-family:var(--title);font-weight:800;letter-spacing:.08em;text-shadow:0 2px 0 rgba(0,0,0,.3),0 0 24px rgba(240,180,90,.35)}
-.title-lead{font-family:var(--sans);color:#f4ecdc}
-.title-btns{margin:20px 0;max-width:none}
-.title-note{color:#c9c4d6;background:rgba(255,255,255,.05);border:1px dashed rgba(140,199,191,.3);border-radius:14px;padding:10px 12px}
+/* ---- タイトル：机に置いたベタ焼き ---- */
+#screen-title{display:block;min-height:100dvh;padding:0 0 calc(28px + var(--sab));background:var(--bg);overflow:hidden}
+.title-sheet{position:relative;width:120%;margin:20px 0 0 -7%;transform:rotate(-2deg);transform-origin:50% 50%}
+.title-sheet img{display:block;width:100%;height:auto;box-shadow:3px 4px 0 rgba(0,0,0,.35)}
+.sheet-tape{position:absolute;top:-12px;left:46%;width:96px;height:26px;background:rgba(214,208,186,.82);transform:rotate(4deg);clip-path:polygon(2% 8%,12% 0,26% 6%,41% 1%,57% 7%,73% 0,88% 5%,100% 2%,98% 92%,86% 100%,70% 94%,55% 100%,38% 95%,22% 100%,8% 94%,0 100%)}
+.title-case{position:absolute;right:19%;bottom:-2.7em;margin:0;font-family:var(--hand);font-weight:600;color:#e8776c;font-size:.95em;line-height:1.3;transform:rotate(2deg);text-align:left}
+.title-inner{max-width:560px;margin:0 auto;padding:58px max(22px,var(--sar)) 0 max(22px,var(--sal));text-align:left}
+.title-head{display:flex;flex-direction:row-reverse;align-items:flex-start;gap:18px}
+#title-h{writing-mode:vertical-rl;font-family:var(--title);font-weight:800;font-size:clamp(2.4rem,11.2vw,3.9rem);letter-spacing:.14em;line-height:1.05;margin:0;color:var(--ink);flex:none}
+.title-side{flex:1;min-width:0;display:flex;flex-direction:column;padding-top:.3em}
+.title-kicker{font-family:var(--serif);color:var(--ink);letter-spacing:.06em;font-size:1em;margin:0 0 .9em;padding-bottom:.6em;border-bottom:1px solid #5c615c}
+.title-lead{font-family:var(--serif);font-size:.95em;line-height:1.85;margin:0;color:#dcdcd3}
+.title-posi{display:block;width:84px;height:auto;margin:26px 0 6px -4px;opacity:.9}
+.title-btns{max-width:none;margin:22px 0 0;gap:10px}
+.title-btns .btn{min-height:56px;font-size:1.08em}
+.title-note{font-size:.84em;line-height:1.8;color:var(--muted);margin:0}
+.title-credit{display:block;margin-top:.8em;font-size:.92em}
+a.title-credit{color:var(--accent);text-underline-offset:3px}
+.title-old{border-radius:var(--r)!important;background:#2f3533!important;border-color:var(--dpe2)!important;color:#e3ece9!important}
 @media (min-width:960px){
-  #screen-title{padding:0 0 0 7vw;align-items:center;justify-content:flex-start}
-  .title-kv,#screen-title::before{height:100%}
-  #screen-title::before{background:linear-gradient(90deg,rgba(27,34,56,.96) 0%,rgba(27,34,56,.78) 40%,rgba(27,34,56,0) 68%)}
-  .title-inner{max-width:520px}
-  .title-btns{max-width:320px}
-  .title-posi{right:auto;left:calc(7vw + 560px);top:auto;bottom:8vh;width:118px}
+  #screen-title{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:center;gap:4vw;padding:5vh 5vw}
+  .title-sheet{width:100%;margin:0}
+  .title-inner{padding:0;margin:0}
+  .title-case{bottom:-3.2em}
+  #title-h{font-size:3.3rem}
+  .title-posi{margin-top:18px}
 }
 
-/* 上下のバー */
-.topbar{background:rgba(27,34,56,.92);border-bottom:2px dashed rgba(140,199,191,.22)}
-.tb-stage{font-family:var(--title);font-weight:800;letter-spacing:.06em}
-.bottombar{background:rgba(33,42,68,.96);border-top:2px dashed rgba(140,199,191,.18)}
-.bb-btn{border-radius:18px;background:var(--panel)}
-#bb-hint::before{content:"";position:absolute;width:0;height:0}
-.vw-head,.vw-bar{background:var(--bg2)}
-.col-view{background:#1e2640}
+/* ---- 上と下のバー ---- */
+.topbar{background:var(--bg);border-bottom-color:#4a4e4b}
+.tb-stage{font-family:var(--title);color:var(--ink);letter-spacing:.06em}
+.bottombar{background:#272928;border-top-color:#4a4e4b}
+.bb-btn{background:transparent;border-color:#5c615c}
+.bb-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.bb-main{background:var(--dpe)!important;color:#fff!important;border-color:#3b665f!important}
 
-/* 会話：莉々香のメッセージはクリーム、森山はうす水色 */
-.msg p{border-radius:6px 18px 18px 18px;box-shadow:0 2px 0 rgba(0,0,0,.18)}
-.msg.mori p{background:#d8ece8;color:#1d2b33;border-radius:18px 6px 18px 18px}
-.beat p{font-family:var(--title);color:#efe3c6;border:0;background:rgba(240,180,90,.08);border-radius:999px;padding:.3em 1.2em}
-.sec-h{color:#ebe0c9;letter-spacing:.12em}
+/* ---- 会話：莉々香のメモ紙 ---- */
+.msg p{border-radius:2px;background:var(--paper);color:var(--paper-ink);box-shadow:1px 2px 0 rgba(0,0,0,.28)}
+.msg.mori p{border-radius:2px;background:#4f7f77;color:#fff;box-shadow:none}
+.msg .who{font-size:.74em;letter-spacing:.08em}
+.msg.typing .dots i{background:#7d817c}
+.beat p{border:0;color:#cfcfc6;letter-spacing:.14em;padding:.2em 0}
+.beat p::before,.beat p::after{content:"";display:inline-block;width:1.6em;border-top:1px solid #6a6e6a;vertical-align:middle;margin:0 .7em}
+.sec-h{font-family:var(--serif);font-weight:700;color:var(--muted);letter-spacing:.12em;display:flex;align-items:center;gap:.7em}
+.sec-h::after{content:"";flex:1;border-top:1px dashed #5a5f5a}
+.doc-chip{background:transparent;border-color:#646a65}
+.chip-kind{display:inline-block;font-size:.74em;border:1px solid currentColor;padding:0 .35em;border-radius:2px;color:var(--muted);line-height:1.5}
+.arch-item{background:var(--panel)}
+.older{color:var(--muted)}
+.new-badge{background:#1f2120;border-color:var(--accent)}
+.re-note{background:#2f3533;border-color:var(--dpe2);color:#e3ece9;border-radius:2px}
+.re-note b{color:var(--accent)}
 
-/* 資料カード：少し傾いた写真カード */
-.card{border-radius:16px;border-color:#e5d9bf;box-shadow:0 4px 10px rgba(0,0,0,.3)}
-.cards li:nth-child(odd) .card{transform:rotate(-.8deg)}
-.cards li:nth-child(even) .card{transform:rotate(.7deg)}
-.card-no{background:var(--pencil);border-radius:999px;padding:0 .6em}
-.card.drawer{background:#252e4a;border-color:#4a5682}
+/* ---- 資料カード：印画紙の切れはし＋スタンプ ---- */
+.card{border-radius:2px;border:0;background:var(--paper) url(../assets/img/paper.png);color:var(--paper-ink);box-shadow:2px 3px 0 rgba(0,0,0,.35);transform:none}
+.card:hover{transform:none}
+.card.is-open{outline:2px solid var(--accent);outline-offset:2px}
+.card-no{background:none;color:var(--stampink);border:1.5px solid var(--stampink);border-radius:2px;padding:0 .35em;letter-spacing:.04em;font-weight:700;opacity:.9}
+.card-ic{font-size:.72em;line-height:1.3;color:#5d625e;letter-spacing:.12em;margin:3px 0 2px;font-family:var(--serif)}
+.card-t{font-family:var(--serif);font-weight:700}
+.card-s{color:#5a5d58}
+.card.drawer{background:transparent;color:var(--ink);border:1px dashed #6a6f6a;box-shadow:none}
+.card.drawer .card-ic{color:var(--muted)}
+.badge-new{background:none;color:var(--grease);font-family:var(--hand);font-weight:600;font-size:.82em;border:2px solid var(--grease);border-radius:52% 46% 55% 44%/50% 56% 44% 50%;padding:0 .35em;transform:rotate(-9deg);top:7px;right:7px;line-height:1.5}
+.badge-pin{bottom:4px;right:6px}
 
-/* 謎カード */
-.pz-card{border-radius:20px;background:linear-gradient(180deg,#2c365a,#252d4b);border-color:#44507a}
-.pz-card.mid{border-color:#8a6a34;background:linear-gradient(180deg,#3a3352,#272e4c)}
-.steps li{border-radius:999px}
-.stamp{border-radius:50%;padding:.35em .55em;border-width:3px;border-style:double;font-family:var(--title)}
-.clear-card{border-radius:20px;background-image:url(../assets/img/paper.webp);background-size:cover;background-blend-mode:multiply}
-.clear-card::after{content:"";position:absolute;right:-6px;top:-34px;width:74px;height:84px;background:url(../assets/img/posi_sit.webp) center/contain no-repeat;transform:rotate(6deg);filter:drop-shadow(0 3px 5px rgba(0,0,0,.35));pointer-events:none}
+/* ---- いまの謎 ---- */
+.steps .st-mark{background:#3a3d3b}
+.steps li.act{border-color:var(--accent)}
+.steps li.act .st-mark{background:var(--dpe);color:#fff}
+.pz-card{background:var(--panel);border-color:#4f5450;border-radius:var(--r)}
+.pz-card.mid{background:var(--panel);border-color:#4f5450;border-left:4px solid var(--dpe)}
+.stamp{border:3px solid var(--grease);color:var(--grease);border-radius:3px;background:rgba(238,238,230,.9);font-family:var(--title)}
+.clear-card{background:var(--paper) url(../assets/img/paper.png);border-radius:2px;box-shadow:2px 3px 0 rgba(0,0,0,.35)}
+.clear-card::after{content:"";position:absolute;right:10px;bottom:8px;width:56px;height:56px;background:url(../assets/img/posi_ink.svg) no-repeat center/contain;opacity:.55;pointer-events:none}
+.doc{border-radius:2px;background-color:var(--paper);box-shadow:2px 3px 0 rgba(0,0,0,.4)}
+.tool{border-radius:var(--r);border-color:#7a7e78}
+.tool[aria-pressed="true"]{background:var(--paper-ink)}
+.tool.big{background:var(--grease);border-color:#8f221e}
 
-/* 資料（紙）：角を少し丸く、紙の質感 */
-.doc{border-radius:10px;background-image:url(../assets/img/paper.webp);background-size:cover;background-blend-mode:multiply}
+/* ---- ダイアログ・トースト ---- */
+dialog{border-radius:4px;border-color:#5a5f5a}
+dialog::backdrop{background:rgba(20,21,20,.72)}
+.tabs [aria-selected="true"]{background:transparent;border-color:transparent;border-bottom:2px solid var(--accent);border-radius:0}
+.toast{background:#1f2120;border-color:var(--dpe2)}
 
-/* シート・ダイアログ */
-dialog{border-radius:22px;border-color:#44507a}
-.tabs [role="tab"]{border-radius:999px}
-.toast{border-radius:999px}
-
-/* 動画パート：ポスターは最初から見せる（再生まで通信しない） */
-.vid-box{border-radius:16px;box-shadow:0 6px 18px rgba(10,14,30,.4)}
+/* ---- 映像：ただの黒い枠 ---- */
+.vid-box{border-radius:0;background:#000}
+.vid-story::before,.vid-story::after,.vid-box::before{content:none!important;display:none!important}
+.vid-story .vid-box{outline:1px solid #111;border:6px solid #0b0b0b}
+.vid-tv .vid-box{border:10px solid #1b1b1b;border-radius:6px;box-shadow:none}
+.vid-telop{font-family:var(--sans);background:rgba(18,32,92,.86);letter-spacing:.04em}
 .vid.has-file .vid-ph{display:none}
 .vid.has-file .vid-box video{background:#000}
-.vid-story .vid-box{border:3px solid #f6efdf;box-shadow:0 0 0 1px rgba(0,0,0,.3),0 8px 20px rgba(0,0,0,.4)}
-.vid-tv .vid-box{border-radius:20px;border-color:#3a3340}
-.vidmsg{position:relative}
-.vidmsg figure.vid-story::before{content:"";position:absolute;left:-4px;top:-14px;width:46px;height:52px;z-index:3;background:url(../assets/img/posi_loupe.webp) center/contain no-repeat;transform:rotate(-10deg);filter:drop-shadow(0 2px 3px rgba(0,0,0,.4));pointer-events:none}
-.vid figure,.vid{position:relative}
+.vid-ph{background:#151615;color:#d8d8cf}
+.vid-ph-h{color:var(--accent)}
+.vid-seek{accent-color:var(--dpe2)}
 
-/* 暗室ミニゲーム：MINI GAME バッジとポジ */
-.darkroom{position:relative;border-radius:22px;border:2px solid rgba(208,96,94,.5);background:radial-gradient(ellipse at 50% 0%,#6a2026 0%,#2a1220 72%)}
-.darkroom::before{content:"MINI GAME";display:inline-block;margin:0 0 10px;padding:2px 10px;border-radius:999px;background:var(--rose);color:#fff;font:700 .7em/1.8 ui-monospace,Menlo,monospace;letter-spacing:.14em}
-.darkroom::after{content:"";position:absolute;right:6px;top:-26px;width:58px;height:66px;background:url(../assets/img/posi_scarf.webp) center/contain no-repeat;transform:rotate(8deg);filter:drop-shadow(0 3px 5px rgba(0,0,0,.4));pointer-events:none}
-.dr-tray{border-radius:16px}
-.dr-meter{border-radius:999px}
-.dr-zone{border-radius:999px}
-.dr-ctl .big{white-space:nowrap;font-size:.95em;padding:.15em .7em}
+/* ---- 暗室：セーフライトの赤一色 ---- */
+.darkroom{border-radius:3px;background:#3a1411;border:1px solid #5e2520;position:relative}
+.darkroom::before{content:"暗室　ミニゲーム"!important;display:inline-block!important;position:static!important;font-family:var(--sans);font-weight:700;font-size:.78em;letter-spacing:.1em;color:#f3d5ce;border:1.5px solid #f3d5ce;border-radius:2px;padding:.05em .5em;margin:0 0 10px;background:none!important;width:auto!important;height:auto!important;transform:none!important;box-shadow:none!important}
+.darkroom::after{content:""!important;position:absolute!important;right:10px;top:8px;width:42px!important;height:42px!important;background:url(../assets/img/posi_line.svg) no-repeat center/contain!important;opacity:.5;transform:none!important;border:0!important}
+.dr-tray{border-radius:2px;background:#2a100e;box-shadow:none;border:1px solid #4d1d19}
+.dr-meter{border-radius:2px;background:linear-gradient(90deg,#e9e4da,#111)}
+.dr-zone{border-radius:2px;background:rgba(238,238,230,.28);border-color:#eeeee6}
+.dr-needle{box-shadow:none;border-radius:1px}
+.dr-manual input{accent-color:#e9e4da}
 
-body.hc .doc,body.hc .clear-card{background-image:none}
-body.reduce .title-posi{animation:none}
-@media (prefers-reduced-motion:reduce){.title-posi{animation:none}}
+/* 角はほぼ直角に（base の丸みをまとめて上書き） */
+#memo,.arch-item,.bb-btn,.btn,.chip span,.doc-chip,.drawer,.dw-body #memo2,.dw-tabs [role=tab],.f-row input,.facts,.hints li,.iconbtn,.msg p,.msg.mori p,.ov-ok,.pane-dock .fb-seg,.pane-sel,.re-note,.set,.sheet,.stamp,.tabs [role="tab"],.title-old,.toast,.tool,.trace-out,.vb-btn,.zbtn,dialog{border-radius:var(--r)}
+
+/* ---- 動きは控えめに ---- */
+@media (prefers-reduced-motion:reduce){ .stamp{animation:none} }
+/* 穴あき手紙のます目は v9 と同じ字形・大きさのまま（読みやすさの基準） */
+.svg-letter .grid-k{font-family:"Zen Maru Gothic",var(--sans)}

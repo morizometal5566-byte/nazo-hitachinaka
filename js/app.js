@@ -120,7 +120,7 @@
   function msgHTML(m) {
     if (m.video) return `<li class="vidmsg">${window.VID.html(m.video, { cap: m.t })}</li>`;
     if (m.who === 'beat') return `<li class="beat"><p>${esc(m.t)}</p></li>`;
-    const chip = m.doc && DOCS[m.doc] ? `<button type="button" class="doc-chip" data-open="${m.doc}"><span aria-hidden="true">${DOCS[m.doc].icon}</span> ${m.doc} ${esc(DOCS[m.doc].title)}</button>` : '';
+    const chip = m.doc && DOCS[m.doc] ? `<button type="button" class="doc-chip" data-open="${m.doc}"><span class="chip-kind" aria-hidden="true">${esc(DOCS[m.doc].kind || '')}</span> ${m.doc} ${esc(DOCS[m.doc].title)}</button>` : '';
     if (m.who === 'mori') return `<li class="msg mori"><span class="who">森山</span><p>${esc(m.t)}</p></li>`;
     return `<li class="msg"><span class="who">莉々香</span><p>${esc(m.t)}</p>${chip}</li>`;
   }
@@ -219,10 +219,10 @@
       const isNew = !S.read.includes(id);
       const open = !isPhone() && S.view.panes.some((p, i) => p.doc === id && (i === 0 || S.view.compare));
       return `<li><button type="button" class="card${open ? ' is-open' : ''}" data-open="${id}" aria-label="${esc(`${d.no} ${d.title}（${d.kind}）${isNew ? '・新着' : ''}${S.pin === id ? '・ピン留め中' : ''}`)}">
-        <span class="card-no">${d.no}</span><span class="card-ic" aria-hidden="true">${d.icon}</span>
+        <span class="card-no">${d.no}</span><span class="card-ic" aria-hidden="true">${esc(d.kind || '')}</span>
         <span class="card-t">${esc(d.title)}</span><span class="card-s">${esc(d.short)}</span>
-        ${isNew ? '<span class="badge-new" aria-hidden="true">NEW</span>' : ''}${S.pin === id ? '<span class="badge-pin" aria-hidden="true">📌</span>' : ''}</button></li>`;
-    }).join('') + (arch.length ? `<li><button type="button" class="card drawer" data-menu="archive"><span class="card-ic" aria-hidden="true">🗂</span><span class="card-t">前の資料</span><span class="card-s">${arch.length}件（引き出し）</span></button></li>` : '');
+        ${isNew ? '<span class="badge-new" aria-hidden="true">未読</span>' : ''}${S.pin === id ? '<span class="badge-pin pin-ic" aria-hidden="true"></span>' : ''}</button></li>`;
+    }).join('') + (arch.length ? `<li><button type="button" class="card drawer" data-menu="archive"><span class="card-ic" aria-hidden="true">引き出し</span><span class="card-t">前の資料</span><span class="card-s">${arch.length}件（引き出し）</span></button></li>` : '');
   }
 
   /* ================= いまの謎 ================= */
@@ -271,8 +271,8 @@
             <li><b>浜野透</b>：「子供がいた、って言えてよかった」。春から、子ども無線教室をまた開くらしい。</li>
             <li><b>風見莉々香</b>：8歳のときのことは、罪に問われない（14歳未満・刑法41条）。刑事を続けている。黄色い帽子は、いま莉々香の机の引き出しにある。</li></ul>
           <p class="muted">${S.choice === 'submit' ? 'ネガは証拠として署に出した。' : 'ネガは平磯の海に返した。'}　遊んでくれて、ありがとう。</p>
-          <p class="sm">🔁 <b>読み返しモード</b>：資料の引き出しに全部の資料が入りました。開くと、最初から置いてあった伏線の「本当の意味」が一行ずつ出ます。</p>
-          <div class="clear-btns"><button type="button" class="btn primary" data-menu="archive">🔁 読み返す</button><button type="button" class="btn ghost" data-menu="memo">メモを見る</button><button type="button" class="btn ghost" id="btn-clear-reset">最初から遊ぶ</button></div></div>`;
+          <p class="sm"><b>読み返しモード</b>：資料の引き出しに全部の資料が入りました。開くと、最初から置いてあった伏線の「本当の意味」が一行ずつ出ます。</p>
+          <div class="clear-btns"><button type="button" class="btn primary" data-menu="archive">読み返す</button><button type="button" class="btn ghost" data-menu="memo">メモを見る</button><button type="button" class="btn ghost" id="btn-clear-reset">最初から遊ぶ</button></div></div>`;
         $('#btn-clear-reset').onclick = askReset;
       }
       renderBottom();
@@ -283,7 +283,7 @@
     const dr = S.drafts[p.id] || {};
     const fb = S.lastFb && S.lastFb.id === p.id ? S.lastFb : null;
     const w = S.wrong[p.id] || 0;
-    const openBtn = p.needFold && !S.fold['0-1'] ? '<button type="button" class="btn ghost sm open-doc" data-open="0-1">✉ 手紙を開く</button>' : '';
+    const openBtn = p.needFold && !S.fold['0-1'] ? '<button type="button" class="btn ghost sm open-doc" data-open="0-1">手紙を開く</button>' : '';
     box.innerHTML = `${stepsHTML()}${factsHTML()}
       <div class="pz-card${p.kind === 'mid' ? ' mid' : ''}">
         <p class="pz-kind">${kindLabel}</p>
@@ -325,7 +325,7 @@
   function updateMainLabel() {
     const b = $('#bb-main');
     if (b.dataset.mode !== 'submit') return;
-    b.textContent = formVisible() ? '答える' : '✏ いまの謎へ';
+    b.textContent = formVisible() ? '答える' : 'いまの謎へ';
   }
   function submit(p) {
     const v = {};
@@ -381,7 +381,7 @@
           if (!isClear()) {
             deliver(`s${S.stage}.start`, () => {
               const n = curDocs().length;
-              toast(`📨 莉々香から資料が届きました（${n}件）`, { label: '資料を見る', fn: () => { const c = $('#cards .card'); if (c) { c.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); c.focus({ preventScroll: true }); } } });
+              toast(`莉々香から資料が届きました（${n}件）`, { label: '資料を見る', fn: () => { const c = $('#cards .card'); if (c) { c.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); c.focus({ preventScroll: true }); } } });
             });
           } else renderPuzzle();
         });
@@ -417,7 +417,7 @@
     const n = paneCount();
     wrap.classList.toggle('two', n === 2);
     $('#btn-compare').setAttribute('aria-pressed', String(S.view.compare));
-    $('#btn-compare').textContent = S.view.compare ? '✕ 並べるのをやめる' : '⇆ 並べて見る';
+    $('#btn-compare').textContent = S.view.compare ? '並べるのをやめる' : '並べて見る';
     let html = '';
     for (let i = 0; i < n; i++) {
       const pn = S.view.panes[i];
@@ -425,7 +425,7 @@
       const opts = unlockedDocs().map((id) => `<option value="${id}"${id === pn.doc ? ' selected' : ''}>${id} ${esc(DOCS[id].title)}</option>`).join('');
       html += `<section class="pane${n === 2 && S.view.active === i ? ' active' : ''}" data-pane="${i}" data-doc="${pn.doc || ''}" aria-label="${n === 2 ? (i ? '右' : '左') + 'の資料' : '資料'}">
         ${n === 2 ? `<div class="pane-head"><label class="sr-only" for="sel-${i}">表示する資料</label><select id="sel-${i}" class="pane-sel"><option value="">資料を選ぶ</option>${opts}</select></div>` : ''}
-        <div class="pane-scroll" tabindex="0" aria-label="資料の本文。＋−キーで拡大縮小">${d ? `<div class="doc-zoom" style="zoom:${pn.zoom}">${rereadOn() && d.re ? `<p class="re-note"><b>🔁 読み返し</b>${esc(d.re)}</p>` : ''}${d.html()}</div>` : '<p class="pane-empty">資料カードを選ぶと、ここに表示されます。</p>'}</div>
+        <div class="pane-scroll" tabindex="0" aria-label="資料の本文。＋−キーで拡大縮小">${d ? `<div class="doc-zoom" style="zoom:${pn.zoom}">${rereadOn() && d.re ? `<p class="re-note"><b>読み返し</b>${esc(d.re)}</p>` : ''}${d.html()}</div>` : '<p class="pane-empty">資料カードを選ぶと、ここに表示されます。</p>'}</div>
       </section>`;
     }
     wrap.innerHTML = html;
@@ -453,8 +453,8 @@
     const vp = $('#btn-vpeek');
     const target = !S.pin || !d ? null : S.pin !== pn.doc ? S.pin : (S.view.back && S.view.back !== S.pin && DOCS[S.view.back] ? S.view.back : null);
     vp.hidden = !target;
-    if (target) { vp.dataset.target = target; vp.textContent = `⇄ ${target === S.pin ? '📌' : ''}${target}`; vp.setAttribute('aria-label', `${target} ${DOCS[target].title} に切り替える（拡大とスクロールはそのまま）`); }
-    const dw = $('#btn-drawer'); if (dw) { dw.hidden = !isPhone() || isClear() || !d; dw.setAttribute('aria-expanded', String(drawerOpen())); dw.textContent = drawerOpen() ? '▾ しまう' : '✏ 答え'; }
+    if (target) { vp.dataset.target = target; vp.textContent = `⇄ ${target === S.pin ? '［ピン］' : ''}${target}`; vp.setAttribute('aria-label', `${target} ${DOCS[target].title} に切り替える（拡大とスクロールはそのまま）`); }
+    const dw = $('#btn-drawer'); if (dw) { dw.hidden = !isPhone() || isClear() || !d; dw.setAttribute('aria-expanded', String(drawerOpen())); dw.textContent = drawerOpen() ? 'しまう' : '答え'; }
   }
   function setZoom(i, z) {
     const pn = S.view.panes[i];
@@ -566,7 +566,7 @@
   function setPin(id) {
     S.pin = id; S.peek = false; save();
     renderViewerBar(); renderBottom(); renderCards(); renderPeek();
-    if (id) toast(`📌 ${id} をピン留め。ほかの資料から「⇄」ですぐ切り替えられます`, null, 2500);
+    if (id) toast(`${id} をピン留め。ほかの資料から「⇄」ですぐ切り替えられます`, null, 2500);
   }
   // ピン留めした資料は、小さな窓ではなく、大きなビューアでひらく（⇄ で行き来できる）
   function openPinned() {
@@ -738,7 +738,7 @@
     if (menuTab === 'hint') renderHints();
     if (menuTab === 'archive') {
       const a = archivedDocs();
-      $('#archive-list').innerHTML = a.length ? a.map((id) => `<li><button type="button" class="arch-item" data-open="${id}"><span aria-hidden="true">${DOCS[id].icon}</span> ${id} ${esc(DOCS[id].title)}<span class="muted sm">${esc(DOCS[id].short)}</span></button></li>`).join('') : '<li class="muted">まだありません。ステージが進むと、前のステージの資料がここに入ります。</li>';
+      $('#archive-list').innerHTML = a.length ? a.map((id) => `<li><button type="button" class="arch-item" data-open="${id}"><span class="chip-kind" aria-hidden="true">${esc(DOCS[id].kind || '')}</span> ${id} ${esc(DOCS[id].title)}<span class="muted sm">${esc(DOCS[id].short)}</span></button></li>`).join('') : '<li class="muted">まだありません。ステージが進むと、前のステージの資料がここに入ります。</li>';
     }
     if (menuTab === 'memo') { $('#memo').value = S.memo; $('#memo-count').textContent = `${S.memo.length}文字`; }
     if (menuTab === 'settings') {

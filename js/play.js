@@ -26,7 +26,7 @@
     <video muted playsinline preload="none" aria-label="${esc(o.cap || '動画')}"></video>
     ${o.telop ? `<div class="vid-telop" aria-hidden="true">${esc(o.telop)}</div>` : ''}
     ${o.stamp ? `<div class="vid-stamp" aria-hidden="true">${esc(o.stamp[0])}</div><div class="vid-rec" aria-hidden="true">● P-REC</div>` : ''}
-    <div class="vid-ph"><p class="vid-ph-h">🎬 映像（準備中）</p><p class="vid-ph-d">${esc(desc)}</p></div>
+    <div class="vid-ph"><p class="vid-ph-h">映像（準備中）</p><p class="vid-ph-d">${esc(desc)}</p></div>
   </div>
   <div class="vid-ctl" role="group" aria-label="動画の操作">
     <button type="button" class="tool" data-vidt="play">▶ 再生</button>
@@ -142,11 +142,11 @@
   </div>
   <div class="dr-ctl" role="group" aria-label="暗室の操作">
     <button type="button" class="tool big" data-drt="start">▶ 現像液に入れる</button>
-    <button type="button" class="tool big" data-drt="pull" disabled>✋ 引き上げる</button>
-    <button type="button" class="tool" data-drt="mode" hidden>🐢 ゆっくりモードにする</button>
+    <button type="button" class="tool big" data-drt="pull" disabled>引き上げる</button>
+    <button type="button" class="tool" data-drt="mode" hidden>ゆっくりモードにする</button>
     <button type="button" class="tool ghost" data-drt="again" hidden>↺ もう1枚</button>
   </div>
-  <label class="dr-manual" hidden><span>✋ 自分の手でゆらす（ゆっくり進める）</span><input type="range" min="0" max="100" step="1" value="0" aria-label="現像の進み具合"></label>
+  <label class="dr-manual" hidden><span>自分の手でゆらす（ゆっくり進める）</span><input type="range" min="0" max="100" step="1" value="0" aria-label="現像の進み具合"></label>
   <p class="dr-msg" aria-live="polite">赤いランプの下。印画紙を現像液に入れると、絵がだんだん浮かんでくる。<b>メーターの金色の帯</b>のあいだで引き上げよう。</p>
   ${o.cap ? `<figcaption>${o.cap}</figcaption>` : ''}
   <div class="sr-only sr-text dr-desc" hidden><p>${o.desc}</p></div>
