@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDMincho&family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@600&family=Shippori+Mincho+B1:wght@800&family=Zen+Maru+Gothic:wght@700&display=swap">
 <link rel="preload" as="image" href="assets/img/contact_sheet.jpg">
-<link rel="stylesheet" href="css/style.css?v=93">
-<link rel="stylesheet" href="css/theme.css?v=93">
+<link rel="stylesheet" href="css/style.css?v=94">
+<link rel="stylesheet" href="css/theme.css?v=94">
 </head>
 <body data-font="m">
 <a class="skip" href="#puzzle">いまの謎へ移動</a>
@@ -71,17 +71,18 @@
       <button type="button" id="btn-compare" class="btn ghost sm vw-compare" aria-pressed="false">並べて見る</button>
     </div>
     <div id="panes" class="panes"></div>
+    <div id="paper-row" class="paper-row" hidden></div>
     <div class="vw-bar">
       <button type="button" id="btn-viewer-close" class="vb-btn vw-close" aria-label="もどる（資料を閉じる）"><span class="ic-back" aria-hidden="true"></span><span class="vb-t">もどる</span></button>
-      <div id="vb-slot" class="vb-slot"></div>
-      <div id="vw-more" class="vw-more" role="group" aria-label="そのほかの道具">
+      <span class="vb-sp" aria-hidden="true"></span>
+      <button type="button" id="btn-pin" class="vb-btn vb-pin" aria-pressed="false"><span class="pin-ic" aria-hidden="true"></span><span class="vb-t" id="btn-pin-t">ピン</span></button>
+      <button type="button" id="btn-vpeek" class="vb-btn" hidden>⇄</button>
+      <div id="vw-more" class="vw-more" role="group" aria-label="紙のそのほかの道具">
         <div id="vm-doc" class="vm-doc"></div>
-        <button type="button" id="btn-pin" class="vb-btn vb-pin" aria-pressed="false"><span class="pin-ic" aria-hidden="true"></span><span class="vb-t" id="btn-pin-t">ピン</span></button>
-        <button type="button" id="btn-vpeek" class="vb-btn" hidden>⇄</button>
       </div>
       <button type="button" id="btn-goans" class="vb-btn vb-goans" hidden aria-label="資料を閉じて、答えの欄へ">答えへ</button>
       <button type="button" id="btn-zcycle" class="vb-btn zcycle" aria-label="資料の大きさ（100%→85%→70%→全体）"><span class="zc-v">100%</span></button>
-      <button type="button" id="btn-more" class="vb-btn vb-more" aria-expanded="false" aria-controls="vw-more" aria-label="そのほかの道具（ピン・すかす・図など）" hidden><span class="ic-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
+      <button type="button" id="btn-more" class="vb-btn vb-more" aria-expanded="false" aria-controls="vw-more" aria-label="紙のそのほかの道具（図・印を消す）" hidden><span class="ic-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
       <div class="zoom" role="group" aria-label="拡大と縮小"><button type="button" class="zbtn" data-z="-" aria-label="縮小">−</button><span class="zval" aria-live="polite">100%</span><button type="button" class="zbtn" data-z="+" aria-label="拡大">＋</button></div>
     </div>
   </aside>
@@ -137,9 +138,10 @@
 <script src="js/content3.js"></script>
 <script src="js/content4.js"></script>
 <script src="js/answers.js"></script>
-<script src="js/tools.js"></script>
+<script src="js/motion.js?v=94"></script>
+<script src="js/tools.js?v=94"></script>
 <script src="assets/video/manifest.js"></script>
-<script src="js/play.js?v=93"></script>
-<script src="js/app.js?v=93"></script>
+<script src="js/play.js?v=94"></script>
+<script src="js/app.js?v=94"></script>
 </body>
 </html>

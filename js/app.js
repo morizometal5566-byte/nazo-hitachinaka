@@ -210,8 +210,10 @@
   }
 
   /* ================= 資料カード ================= */
+  let shownCards = null;
   function renderCards() {
     const ids = curDocs();
+    const before = shownCards; shownCards = ids.slice();
     const arch = archivedDocs();
     $('#cards-count').textContent = `（${ids.length}）`;
     $('#cards').innerHTML = ids.map((id) => {
@@ -223,6 +225,8 @@
         <span class="card-t">${esc(d.title)}</span><span class="card-s">${esc(d.short)}</span>
         ${isNew ? '<span class="badge-new" aria-hidden="true">未読</span>' : ''}${S.pin === id ? '<span class="badge-pin pin-ic" aria-hidden="true"></span>' : ''}</button></li>`;
     }).join('') + (arch.length ? `<li><button type="button" class="card drawer" data-menu="archive"><span class="card-ic" aria-hidden="true">引き出し</span><span class="card-t">前の資料</span><span class="card-s">${arch.length}件（引き出し）</span></button></li>` : '');
+    // 新しく届いた資料だけ、机に1枚ずつ落ちてくる
+    if (before && window.MO) MO.stagger(ids.filter((id) => !before.includes(id)).map((id) => $(`#cards [data-open="${id}"]`)), 'drop', 70, { duration: 340 });
   }
 
   /* ================= いまの謎 ================= */
@@ -251,6 +255,15 @@
   function sentenceWithBlanks(p) {
     return p.q.split('［　］').map(esc).reduce((acc, part, i) => acc + (i ? `<span class="blank">［${i}］</span>` : '') + part, '');
   }
+  // 最後の選択・エンディング：はじめて出たときだけ、ハンコ→1行ずつ
+  const endShown = {};
+  function endMotion(box, kind) {
+    const c = $('.clear-card', box); if (!c || c.hidden || endShown[kind] || !window.MO) return;
+    endShown[kind] = true;
+    MO.enter(c, 'paper', { duration: 320 });
+    MO.play($('.clear-stamp', c), MO.stampAt(-6), { duration: 420, delay: 180, fill: 'backwards' });
+    MO.stagger($$('h2, p:not(.clear-stamp), .epi li, .clear-btns', c), 'fadeUp', kind === 'end' ? 90 : 70, { duration: 300, delay: 300 });
+  }
   function renderPuzzle() {
     const box = $('#puzzle');
     if (isClear()) {
@@ -260,6 +273,7 @@
           <p>19年前の写真。誰の罪にも、もう問えない。それでも、残すか。</p>
           <div class="clear-btns"><button type="button" class="btn primary" data-choice="submit">署に出す</button><button type="button" class="btn ghost" data-choice="sea">平磯の海に返す</button></div></div>`;
         $$('[data-choice]', box).forEach((b) => b.onclick = () => choose(b.dataset.choice));
+        endMotion(box, 'choice');
       } else {
         box.innerHTML = `${factsHTML()}<div class="clear-card"><p class="clear-stamp" aria-hidden="true">完</p>
           <h2 id="pz-name">十九年目のネガ　解決</h2>
@@ -274,6 +288,7 @@
           <p class="sm"><b>読み返しモード</b>：資料の引き出しに全部の資料が入りました。開くと、最初から置いてあった伏線の「本当の意味」が一行ずつ出ます。</p>
           <div class="clear-btns"><button type="button" class="btn primary" data-menu="archive">読み返す</button><button type="button" class="btn ghost" data-menu="memo">メモを見る</button><button type="button" class="btn ghost" id="btn-clear-reset">最初から遊ぶ</button></div></div>`;
         $('#btn-clear-reset').onclick = askReset;
+        endMotion(box, 'end');
       }
       renderBottom();
       return;
@@ -341,7 +356,8 @@
       let msg = r.msg;
       S.lastFb = { id: p.id, msg, cls: 'ng' }; save();
       renderPuzzle();
-      const card = $('.pz-card'); if (card && !reduced()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); }
+      const card = $('.pz-card');
+      if (card && !reduced()) { if (window.MO && MO.play(card, MO.K.shake, { duration: 360, easing: 'ease-out' })) MO.pencil($('#pz-fb')); else { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); } }
       if (isPhone()) reveal($('#pz-fb'), 'nearest');
       return;
     }
@@ -356,6 +372,7 @@
       card.insertAdjacentHTML('beforeend', `<div class="stamp${reduced() ? ' still' : ''}" aria-hidden="true">${p.kind === 'mid' ? (stg === 0 ? 'ロック解除' : '解決') : '正解'}</div>`);
       $$('input,button', card).forEach((b) => { b.disabled = true; });
       $('#pz-fb').className = 'pz-fb ok'; $('#pz-fb').textContent = '正解！';
+      if (window.MO) MO.play(card, MO.K.thump, { duration: 240, delay: 230 }); // ハンコが紙に当たる
     }
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); // スマホのキーボードを閉じる
     const chatKey = `s${stg}.${p.id}`;
@@ -369,6 +386,7 @@
         renderAll();
         deliver(chatKey, () => {
           if (!isClear()) {
+            chapterCard(S.stage);
             deliver(`s${S.stage}.start`, () => {
               const n = curDocs().length;
               toast(`莉々香から資料が届きました（${n}件）`, { label: '資料を見る', fn: () => { const c = $('#cards .card'); if (c) { reveal(c, 'nearest', true); c.focus({ preventScroll: true }); } } });
@@ -382,6 +400,14 @@
     }, reduced() ? 150 : 1100);
   }
 
+  // 章の扉：つぎのステージの名前を、紙の札で一瞬だけ見せる（見せるだけ。会話の順番は変えない）
+  function chapterCard(n) {
+    const st = STAGES[n]; if (!st || !window.MO) return;
+    const m = String(st.label).match(/^(\S+)\s+(.+)$/);
+    MO.titleCard(m ? m[1] : '', m ? m[2] : st.label, st.objective);
+    stageLabelPop = true;
+  }
+  let stageLabelPop = false;
   const chatBusy = () => typing || queue.length > 0;
   function choose(c) {
     if (S.choice) return;
@@ -419,6 +445,20 @@
       if (pn && pn.doc && sc && el.dataset.doc === pn.doc) docView[pn.doc] = { z: pn.zoom, fit: !!pn.fit, t: sc.scrollTop, l: sc.scrollLeft };
     });
   }
+  // 紙の帯のタブ：小さな紙の絵（線だけ）＋短いことば。読み上げは、もとの長いことば
+  const TAB_IC = {
+    open: '<svg viewBox="0 0 20 24" aria-hidden="true"><rect x="3" y="1.5" width="14" height="21" rx="1"/><path d="M3 12h14" stroke-dasharray="2 2"/></svg>',
+    omote: '<svg viewBox="0 0 20 24" aria-hidden="true"><rect x="3" y="12" width="14" height="10.5" rx="1"/><path d="M3 12h14"/><path d="M6 3.5 Q10 0.5 14 3.5" /><path d="M10 2v7m-2.6-2.6L10 9l2.6-2.6"/></svg>',
+    ura: '<svg viewBox="0 0 20 24" aria-hidden="true"><rect x="3" y="12" width="14" height="10.5" rx="1"/><path d="M3.5 6.5 Q10 1 16.5 6.5"/><path d="M16.5 6.5l-3-.6m3 .6l.5-3"/></svg>',
+  };
+  function decoratePaperTabs(bar, short) {
+    const SHORT = short ? { open: 'ひらく', omote: '表', ura: '裏' } : { open: 'ひらく', omote: '表で重ねる', ura: '裏で重ねる' };
+    $$('[data-act="fstate"]', bar).forEach((b) => {
+      if (b.dataset.tab) return; b.dataset.tab = '1';
+      b.setAttribute('aria-label', b.textContent.trim());
+      b.innerHTML = `<span class="pt-ic">${TAB_IC[b.dataset.v] || ''}</span><span class="pt-t">${SHORT[b.dataset.v] || b.textContent}</span>`;
+    });
+  }
   function renderPanes() {
     rememberView();
     const wrap = $('#panes');
@@ -437,21 +477,22 @@
       </section>`;
     }
     wrap.innerHTML = html;
-    // 手紙の道具（折る・裏返す・図）は、拡大しない下の道具バーへ。シートは画面いっぱいに使う
-    // スマホ：資料の道具は、下の1行のバー（#vb-slot）へ。めったに使わないもの（すかす・印を消す・図）は「…」の中へ
-    const slot = $('#vb-slot'), vmDoc = $('#vm-doc'); slot.innerHTML = ''; vmDoc.innerHTML = '';
+    // 紙を動かす道具（ひらく・表・裏・すかす）は、紙のすぐ下の「紙の帯」へ（画面の道具バーとは分ける）。
+    // スマホ：めったに使わないもの（図・印を消す）は、下のバーの「…」の中へ
+    const prow = $('#paper-row'), vmDoc = $('#vm-doc'); prow.innerHTML = ''; vmDoc.innerHTML = '';
     $$('.pane', wrap).forEach((el) => {
       const bar = $('.doc-zoom .fold-bar', el); if (!bar) return;
+      decoratePaperTabs(bar, isPhone() && n === 1);
       if (isPhone() && n === 1) {
         const rest = document.createElement('div'); rest.className = 'fold-bar vm-fold'; rest.dataset.foldBar = bar.dataset.foldBar;
         $$('.fb-row, .fb-more', bar).forEach((x) => rest.appendChild(x));
-        const SHORT = { open: 'ひらく', omote: '表', ura: '裏' };
-        $$('[data-act="fstate"]', bar).forEach((b) => { b.setAttribute('aria-label', b.textContent.trim()); if (SHORT[b.dataset.v]) b.textContent = SHORT[b.dataset.v]; });
+        { const see = $('[data-act="fsee"]', rest); if (see) { see.classList.add('pa-see'); see.textContent = 'すかす'; $('.fb-seg', bar).after(see); } }
         { const dg = $('[data-act="fdiag"]', rest); if (dg) dg.textContent = '紙の動かし方（図）'; }
-        bar.classList.add('vb-fold'); slot.appendChild(bar); vmDoc.appendChild(rest);
-      } else { bar.classList.add('pane-dock'); el.appendChild(bar); }
+        bar.classList.add('paper-acts'); prow.appendChild(bar); vmDoc.appendChild(rest);
+      } else { bar.classList.add('pane-dock', 'paper-dock'); el.appendChild(bar); }
     });
-    $('.vw-bar').classList.toggle('has-slot', !!slot.firstChild);
+    prow.hidden = !prow.firstChild;
+    $('.vw-bar').classList.toggle('has-more', !!vmDoc.firstChild);
     $$('.pane', wrap).forEach(bindPane);
     $$('.pane', wrap).forEach((el) => {
       const pn = S.view.panes[+el.dataset.pane]; const v = pn && docView[pn.doc]; const sc = $('.pane-scroll', el);
@@ -479,7 +520,7 @@
     const ga = $('#btn-goans'); if (ga) ga.hidden = !isPhone() || isClear() || !d;
     // 「…」の中身があるときだけ「…」を出す（ないときは、ピンなどを1行にそのまま並べる）
     const bar = $('.vw-bar'), more = $('#btn-more');
-    const inMenu = bar.classList.contains('has-slot');
+    const inMenu = bar.classList.contains('has-more');
     more.hidden = !inMenu || !isPhone();
     bar.classList.toggle('menu-mode', inMenu && isPhone());
     if (!inMenu) setMore(false);
@@ -594,9 +635,24 @@
     if (!DOCS[id] || !unlockedDocs().includes(id)) return;
     const v = S.view;
     const i = activePane();
+    const prev = v.panes[i].doc, wasOpen = !isPhone() || viewerOpen();
     if (v.panes[i].doc !== id) { rememberView(); v.panes[i].doc = id; Object.assign(v.panes[i], zoomOf(id)); }
     markRead(id); save();
     renderPanes(); renderCards();
+    // 紙の動き：ひらくときは机にすべりこむ。べつの資料にかえるときは、めくる向きで
+    if (window.MO && MO.on()) {
+      const doc = $(`.pane[data-pane="${i}"] .doc-zoom`);
+      if (!wasOpen) MO.enter(doc, 'paper', { duration: 300 });
+      else if (prev && prev !== id) { const o = unlockedDocs(); MO.enter(doc, o.indexOf(id) < o.indexOf(prev) ? 'turnR' : 'turnL', { duration: 260 }); }
+      // 暗室の資料：明かりを落として、赤い安全灯がつく
+      const pane = $(`.pane[data-pane="${i}"]`);
+      if (doc && pane && $('figure.dev, figure.neg', doc) && (!wasOpen || prev !== id)) {
+        const r = pane.getBoundingClientRect(), dk = document.createElement('div'); dk.className = 'darkroom-in'; dk.setAttribute('aria-hidden', 'true');
+        dk.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`; document.body.appendChild(dk);
+        const an = MO.play(dk, [{ opacity: 1 }, { opacity: 0.85, offset: 0.35 }, { opacity: 0 }], { duration: 560, easing: 'ease-in' });
+        const rm = () => dk.remove(); if (an) an.finished.then(rm, rm); else rm();
+      }
+    }
     if (isPhone()) {
       if (!viewerOpen()) {
         document.body.classList.add('viewer-open');
@@ -631,6 +687,7 @@
     const id = S.view.panes[0].doc;
     const c = $(`#cards [data-open="${id}"]`) || $('#puzzle');
     if (c) c.focus({ preventScroll: true });
+    if (window.MO && c && c.classList.contains('card')) MO.play(c, [{ transform: 'translate3d(0,-6px,0) rotate(-1deg)', opacity: 0.6 }, { transform: 'none', opacity: 1 }], { duration: 240 }); // 資料を机にもどす
   }
 
   /* ================= ピン留め＋ちら見（スマホで2枚を見比べるかわり） ================= */
@@ -727,8 +784,125 @@
   }
   function setFold(id, v) {
     if (!!S.fold[id] === v) return;
-    S.fold[id] = v; if (!v) S.fold[id + ':flip'] = false; save(); applyFolds();
+    foldTo(id, v ? 'omote' : 'open');
+  }
+  const foldStateOf = (id) => (!S.fold[id] ? 'open' : S.fold[id + ':flip'] ? 'ura' : 'omote');
+  // 紙の置き方を変える：先に本当の状態にしてから、その上で「紙が動く絵」を短く見せる（タップで飛ばせる）
+  function foldTo(id, v) {
+    endFoldMotion();
+    const from = foldStateOf(id); if (from === v) return;
+    const svg = $(`#panes [data-fold-doc="${id}"] svg.svg-letter`);
+    const sc = svg && svg.closest('.pane-scroll');
+    const vis = svg && sc && sc.offsetParent && svg.getBoundingClientRect().width > 40;
+    const pre = vis && window.MO && MO.on() ? { r: svg.getBoundingClientRect(), vb: svg.viewBox.baseVal.y, sr: sc.getBoundingClientRect() } : null;
+    S.fold[id] = v !== 'open'; S.fold[id + ':flip'] = v === 'ura'; save(); applyFolds();
     renderPuzzleSoft();
+    if (sc && v !== 'open' && from === 'open') { // 折ったら、重ねたところが見えるように
+      const top = svg.getBoundingClientRect().top - sc.getBoundingClientRect().top;
+      if (top < 0) sc.scrollTop += top - 4;
+    }
+    if (pre) foldMotion(svg, sc, pre, from, v);
+  }
+  /* ---- 紙が動く絵（重ね絵）。本物の手紙は下で、もう新しい状態になっている ---- */
+  let foldRun = null;
+  function endFoldMotion() { if (foldRun) foldRun.end(); }
+  function foldGhost(svg, state, part, s) {
+    const g = svg.cloneNode(true);
+    g.removeAttribute('id'); g.setAttribute('aria-hidden', 'true'); g.removeAttribute('role'); g.removeAttribute('aria-labelledby');
+    // 同じ id が2つにならないように付けかえる（穴のマスクも、付けかえた方を見る）
+    $$('[id]', g).forEach((el) => { const o = el.id, n2 = o + '-gh'; el.id = n2; $$(`[mask="url(#${o})"]`, g).forEach((m) => m.setAttribute('mask', `url(#${n2})`)); });
+    $$('title,desc', g).forEach((t) => t.remove());
+    g.setAttribute('viewBox', svg.dataset.vbFull);
+    g.classList.add('fs-ghost', 'g-' + part);
+    g.classList.toggle('is-folded', state !== 'open'); g.classList.toggle('is-flipped', state === 'ura');
+    const mir = $('g.mir', g); if (mir) mir.style.transform = state === 'ura' ? 'scaleX(-1)' : '';
+    g.style.cssText = `position:absolute;left:0;top:0;width:${400 * s}px;height:${1582 * s}px;max-width:none;visibility:visible`;
+    return g;
+  }
+  function foldMotion(svg, sc, pre, from, to) {
+    const F = 700, s = pre.r.width / 400;
+    const R = pre.sr;
+    const stage = document.createElement('div'); stage.className = 'fold-stage'; stage.setAttribute('aria-hidden', 'true');
+    stage.style.cssText = `left:${R.left}px;top:${R.top}px;width:${R.width}px;height:${R.height}px`;
+    const bg = document.createElement('div'); bg.className = 'fs-bg'; stage.appendChild(bg);
+    const cam = document.createElement('div'); cam.className = 'fs-cam';
+    cam.style.cssText = `width:${400 * s}px;height:${1582 * s}px;perspective:${Math.round(1900 * s)}px`;
+    stage.appendChild(cam);
+    cam.appendChild(foldGhost(svg, to, 'base', s));
+    const face = (state, off, back) => {
+      const f = document.createElement('div'); f.className = 'fs-face' + (back ? ' back' : '');
+      const g = foldGhost(svg, state, 'top', s); g.style.top = (-off * s) + 'px'; f.appendChild(g);
+      const sh = document.createElement('i'); sh.className = 'fs-sh'; f.appendChild(sh);
+      return f;
+    };
+    const card = (top, a, b, axis) => {
+      const c = document.createElement('div'); c.className = 'fs-card ' + axis;
+      c.style.cssText = `top:${top * s}px;height:${F * s}px;width:${400 * s}px`;
+      c.appendChild(a); c.appendChild(b); c.hidden = true; cam.appendChild(c); return c;
+    };
+    // 折る：上半分（0〜F）が、点線（F）を軸に手前へ回って、下に重なる
+    const fold = card(0, face('open', 0), face('omote', F, true), 'x');
+    // 裏返す：重ねた紙（F〜2F）が、まん中を軸に左右にくるっと回る
+    const flip = card(F, face('omote', F), face('ura', F, true), 'y');
+    const cut = document.createElement('div'); cut.className = 'fs-cut'; cut.style.top = (F * s - 2) + 'px'; cam.appendChild(cut);
+    // 重ねた手紙は、ます目の段（690〜1035）だけ見える。その下は机でかくす
+    const VB1 = 1035, low = document.createElement('div'); low.className = 'fs-low';
+    low.style.cssText = `top:${VB1 * s}px;height:${(1582 - VB1) * s + 2}px;width:${400 * s}px;opacity:${from === 'open' ? 0 : 1}`; cam.appendChild(low);
+    document.body.appendChild(stage);
+    svg.style.visibility = 'hidden';
+    const tf = (x, y, k) => `translate3d(${x}px,${y}px,0) scale(${k})`;
+    const atRect = (r, vby) => tf(r.left - R.left, r.top - R.top - vby * s * (r.width / 400 / s), r.width / 400 / s);
+    const T0 = atRect(pre.r, pre.vb);
+    const mk = Math.min(1, (R.height - 20) / (1080 * s), (R.width - 16) / (400 * s));
+    const TM = tf((R.width - 400 * s * mk) / 2, 10, mk);
+    cam.style.transform = T0;
+    let dead = false, anims = [];
+    const run = { end() {
+      if (dead) return; dead = true; anims.forEach((a) => { try { a.cancel(); } catch (e) {} });
+      stage.remove(); svg.style.visibility = ''; if (foldRun === run) foldRun = null; MO.offSkip(run.end);
+    } };
+    foldRun = run; MO.onSkip(run.end);
+    stage.addEventListener('pointerdown', run.end);
+    const go = (el, kf, o) => { if (dead) return Promise.resolve(); const a = el.animate(kf, Object.assign({ duration: 300, easing: 'cubic-bezier(.45,.05,.25,1)', fill: 'forwards' }, o)); anims.push(a); return a.finished.catch(() => {}); };
+    const camTo = (t, d) => { const a0 = cam.style.transform; cam.style.transform = t; return go(cam, [{ transform: a0 }, { transform: t }], { duration: d, easing: 'cubic-bezier(.3,.1,.2,1)' }); };
+    const shade = (f, k) => go($('.fs-sh', f), k, { easing: 'linear' });
+    const doFold = async (down, d) => {
+      fold.hidden = false; flip.hidden = true;
+      const [fa, fb] = fold.children;
+      const k0 = down ? 'translate3d(0,0,0) rotateX(0deg)' : 'translate3d(0,0,0) rotateX(-180deg)', k1 = down ? 'translate3d(0,0,0) rotateX(-180deg)' : 'translate3d(0,0,0) rotateX(0deg)';
+      const mid = 'translate3d(0,0,' + Math.round(60 * s) + 'px) rotateX(-90deg)';
+      shade(fa, down ? [{ opacity: 0 }, { opacity: 0.3, offset: 0.5 }, { opacity: 0.3 }] : [{ opacity: 0.3 }, { opacity: 0.3, offset: 0.5 }, { opacity: 0 }]);
+      shade(fb, down ? [{ opacity: 0.3 }, { opacity: 0.3, offset: 0.5 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 0.3, offset: 0.5 }, { opacity: 0.3 }]);
+      await go(fold, [{ transform: k0 }, { transform: mid, offset: 0.5 }, { transform: k1 }], { duration: d });
+      if (down) { fold.hidden = true; flip.hidden = false; }
+    };
+    const doCut = (d) => go(cut, [{ transform: 'scaleX(0)', opacity: 1 }, { transform: 'scaleX(1)', opacity: 1, offset: 0.7 }, { transform: 'scaleX(1)', opacity: 0 }], { duration: d, easing: 'ease-out' });
+    const doFlip = async (fwd, d) => {
+      fold.hidden = true; flip.hidden = false;
+      const [fa, fb] = flip.children;
+      const z = Math.round(70 * s);
+      const m = `translate3d(0,${-8 * s}px,${z}px) rotateY(-90deg)`, k = fwd ? ['translate3d(0,0,0) rotateY(0deg)', m, 'translate3d(0,0,0) rotateY(-180deg)'] : ['translate3d(0,0,0) rotateY(-180deg)', m, 'translate3d(0,0,0) rotateY(0deg)'];
+      shade(fa, fwd ? [{ opacity: 0 }, { opacity: 0.4, offset: 0.5 }, { opacity: 0.4 }] : [{ opacity: 0.4 }, { opacity: 0.4, offset: 0.5 }, { opacity: 0 }]);
+      shade(fb, fwd ? [{ opacity: 0.4 }, { opacity: 0.4, offset: 0.5 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 0.4, offset: 0.5 }, { opacity: 0.4 }]);
+      await go(flip, k.map((t, i) => ({ transform: t, offset: i / 2 })), { duration: d });
+    };
+    // はじめの見た目：from の状態
+    if (from === 'open') { fold.hidden = false; } else { flip.hidden = false; if (from === 'ura') flip.style.transform = 'translate3d(0,0,0) rotateY(-180deg)'; }
+    const needCam = from === 'open' || to === 'open';
+    const quick = from !== 'open' && to !== 'open' ? 1 : (from === 'ura' || to === 'ura') ? 0.8 : 1; // 2つ続くときは、少し速く
+    (async () => {
+      const nf = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      if (needCam) { go(bg, [{ opacity: 0 }, { opacity: 1 }], { duration: 140 }); if (from !== 'open') go(low, [{ opacity: 1 }, { opacity: 0 }], { duration: 150 }); await camTo(TM, 150 * quick); }
+      if (from === 'open' && to !== 'open') { if (to === 'ura') await doCut(150 * quick); await doFold(true, 320 * quick); }
+      if (from === 'ura' && to !== 'ura') await doFlip(false, 340 * quick);
+      if (from === 'omote' && to === 'ura') { await doCut(130); await doFlip(true, 340); }
+      if (to === 'ura' && from === 'open') await doFlip(true, 340 * quick);
+      if (to === 'open') await doFold(false, 320 * quick);
+      await nf(); if (dead) return;
+      const vb = svg.viewBox.baseVal.y;
+      if (needCam) { go(bg, [{ opacity: 1 }, { opacity: 0 }], { duration: 160, delay: 20 }); if (to !== 'open') go(low, [{ opacity: 0 }, { opacity: 1 }], { duration: 170 * quick }); await camTo(atRect(svg.getBoundingClientRect(), vb), 170 * quick); }
+      run.end();
+    })();
   }
   function renderPuzzleSoft() { // 入力中の文字を消さないよう、「手紙を開く」ボタンだけ出し入れする
     const b = $('#puzzle .open-doc'); const p = curPuzzle();
@@ -743,15 +917,14 @@
     }
     const fsb = e.target.closest('[data-act="fstate"]');
     if (fsb) { // ひらいた／表で重ねる／裏で重ねる を1回で切り替える
-      const id = fsb.closest('[data-fold-bar]').dataset.foldBar; const v = fsb.dataset.v;
-      S.fold[id + ':flip'] = v === 'ura';
-      if (!!S.fold[id] !== (v !== 'open')) setFold(id, v !== 'open'); else { save(); applyFolds(); }
+      const id = fsb.closest('[data-fold-bar]').dataset.foldBar;
+      foldTo(id, fsb.dataset.v);
       return;
     }
     const see = e.target.closest('[data-act="fsee"]');
     if (see) { const id = see.closest('[data-fold-bar]').dataset.foldBar; S.fold[id + ':nosee'] = !S.fold[id + ':nosee']; save(); applyFolds(); return; }
     const mc = e.target.closest('[data-act="fmclear"]');
-    if (mc) { const id = mc.closest('[data-fold-bar]').dataset.foldBar; S.fold[id + ':marks'] = []; save(); applyFolds(); return; }
+    if (mc) { const id = mc.closest('[data-fold-bar]').dataset.foldBar; S.fold[id + ':marks'] = []; save(); applyFolds(); if (mc.closest('#vw-more')) setMore(false); return; }
     const lsvg = e.target.closest('svg.svg-letter');
     if (lsvg && !e.target.closest('.fold-handle')) { // ます目をタップ → 自分用の印（答えは出さない。どこに付けるかはプレイヤーが決める）
       const id = lsvg.closest('[data-fold-doc]').dataset.foldDoc;
@@ -834,7 +1007,7 @@
       const ok = await confirmDlg(HINT_ASK[n], '見る');
       if (!ok) { $('#btn-hint-next') && $('#btn-hint-next').focus(); return; }
       S.hints[p.id] = n + 1; save(); renderHints(); renderBottom();
-      const opened = $$('#hint-box li.open'); if (opened.length) { opened[opened.length - 1].setAttribute('tabindex', '-1'); opened[opened.length - 1].focus(); }
+      const opened = $$('#hint-box li.open'); if (opened.length) { const li = opened[opened.length - 1]; li.setAttribute('tabindex', '-1'); li.focus(); li.style.transformOrigin = '50% 0'; if (window.MO) MO.play(li, MO.K.unfold, { duration: 380, easing: 'ease-out' }); }
     };
   }
   let memoTimer = null;
@@ -907,6 +1080,7 @@
     $('#stage-label').textContent = isClear() ? (S.choice ? 'エピローグ' : '夜明け') : st.label;
     $('#objective-text').textContent = isClear() ? (S.choice ? 'クリア。資料を読み返せます' : 'ネガをどうするか、決める') : st.objective;
     renderFeed(); renderCards(); renderPuzzle(); renderPanes(); renderPeek();
+    if (stageLabelPop && window.MO) { stageLabelPop = false; MO.enter($('#stage-label'), 'pop', { duration: 320, delay: 200 }); MO.enter($('#objective-text'), 'fadeUp', { duration: 300, delay: 300, fill: 'backwards' }); }
   }
   function startGame() {
     S.phase = 'game'; save();
@@ -975,6 +1149,7 @@
   $('#btn-new2').onclick = async () => { const ok = await confirmDlg('はじめから遊びますか？ 今の進み具合とメモは消えます。', 'はじめから'); if (ok) wipe(); };
 
   window.TOOLS.init({ S: () => S, save, cb: () => !!S.settings.cb });
+  if (window.MO) MO.init({ reduced: () => reduced() });
   window.PLAY.init({ S: () => S, save, reduced: () => reduced() });
   window.__proto = { state: () => JSON.parse(JSON.stringify(S)), judge: (id, v) => judge(allPuzzles().find((p) => p.id === id), v), N };
 })();

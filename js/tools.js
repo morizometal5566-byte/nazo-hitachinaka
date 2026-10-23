@@ -28,7 +28,8 @@
     if (ok) { o.x = sn.x; o.y = sn.y; }
     const xf = $('.ov-xf', fig);
     xf.setAttribute('transform', `translate(${o.x} ${o.y}) rotate(${o.r} ${px} ${py})${o.f ? ` translate(${px} ${py}) scale(-1 1) translate(${-px} ${-py})` : ''}`);
-    fig.classList.toggle('snapped', ok);
+    const was = fig.classList.contains('snapped');
+    fig.classList.toggle('snapped', ok); snapFx(fig, was, ok);
     const okEl = $('.ov-ok', fig); if (okEl) okEl.hidden = !ok;
     const a = [];
     const rr = ((o.r % 360) + 360) % 360; if (rr) a.push(`${rr}°`);
@@ -36,6 +37,18 @@
     $('.ov-state', fig).textContent = 'いま：' + a.join('・') + (ok ? '　✓ ぴったり' : '');
     fig.classList.toggle('is-flipped', !!o.f);
     return ok;
+  }
+  /* v9.4 ぴったり合った「その瞬間」だけ、暗室の赤い灯りがふっと明るくなる（もう合っている状態を見せるだけ） */
+  let quiet = false, scarfSeen = false;
+  function snapFx(fig, was, ok) {
+    if (quiet || was || !ok || !window.MO || !MO.on()) return;
+    const okEl = $('.ov-ok', fig); if (okEl) MO.play(okEl, MO.K.pop, { duration: 300 });
+    const host = $('svg', fig) && $('svg', fig).parentNode;
+    if (!host) return;
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    const w = document.createElement('div'); w.className = 'safelight'; w.setAttribute('aria-hidden', 'true'); host.appendChild(w);
+    const a = MO.play(w, [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }], { duration: 520, easing: 'ease-out' });
+    const rm = () => w.remove(); if (a) a.finished.then(rm, rm); else rm();
   }
   function svgScale(svg) {
     const vb = svg.viewBox.baseVal; const r = svg.getBoundingClientRect();
@@ -191,7 +204,8 @@
       b.setAttribute('aria-label', `かけら${i + 1}（${f.order.indexOf(i) + 1}番目・${(f.rot[i] % 4) * 90}°）`);
     });
     const ok = frOk(f);
-    fig.classList.toggle('snapped', ok);
+    const was = fig.classList.contains('snapped');
+    fig.classList.toggle('snapped', ok); snapFx(fig, was, ok);
     $('.ov-ok', fig).hidden = !ok;
     const sb = $('[data-fragt="swap"]', fig); sb.setAttribute('aria-pressed', String(swapMode));
     $('.frag-state', fig).textContent = ok ? '✓ つながった' : swapMode ? (swapSel == null ? '入れかえる1つ目をタップ' : '2つ目をタップ') : '';
@@ -205,7 +219,10 @@
       else if (swapSel === i) swapSel = null;
       else { const a = f.order.indexOf(swapSel), c = f.order.indexOf(i); [f.order[a], f.order[c]] = [f.order[c], f.order[a]]; swapSel = null; swapMode = false; }
     } else f.rot[i] = (f.rot[i] + 1) % 4;
+    // 入れかえ：かけらを持ち上げて、となりへ置く（FLIP：位置の差だけ transform で動かす）
+    const fr = $$('.frag', fig), r0 = fr.map((x) => x.getBoundingClientRect().left);
     frApply(fig); ctx.save();
+    if (window.MO && MO.on()) fr.forEach((x, k) => { const dx = r0[k] - x.getBoundingClientRect().left; if (Math.abs(dx) > 2) MO.play(x, [{ transform: `translate3d(${dx}px,-10px,0) rotate(${dx > 0 ? -2 : 2}deg)` }, { transform: 'translate3d(0,0,0)' }], { duration: 300, easing: 'cubic-bezier(.3,.7,.3,1)' }); });
   }
   function fragTool(b) {
     const fig = b.closest('figure.frags');
@@ -224,7 +241,8 @@
     $('.neg-frame', fig).style.filter = `grayscale(1) invert(${(1 - n.d / 100).toFixed(2)})`; // 白黒フィルム：色は出ない
     $('input[type=range]', fig).value = n.d; $('.dev-val', fig).textContent = n.d;
     const ok = negOk(n);
-    fig.classList.toggle('snapped', ok);
+    const was = fig.classList.contains('snapped');
+    fig.classList.toggle('snapped', ok); snapFx(fig, was, ok);
         $('.ov-ok', fig).hidden = !ok;
     const desc = $('.neg-desc', fig); if (desc) desc.hidden = !ok;
     const a = []; if (n.r % 4) a.push(`${(n.r % 4) * 90}°`); if (n.f) a.push('裏返し'); a.push(n.d < 15 ? 'ネガ' : n.d < 85 ? '現像中' : 'ポジ');
@@ -240,11 +258,23 @@
   /* ---------- まとめ ---------- */
   function apply(root) {
     root = root || document;
+    quiet = true;
     $$('figure.ov', root).forEach(ovApply);
     $$('figure.dev', root).forEach((f) => devApply(f));
     $$('figure.frags', root).forEach(frApply);
     $$('figure.neg', root).forEach(negApply);
     $$('figure.pcs', root).forEach(pcApply);
+    quiet = false;
+    // S9 マフラー：はじめて見るときだけ、上からくるくる広げる
+    $$('figure.scarf', root).forEach((fig) => {
+      if (scarfSeen || !window.MO || !MO.on()) return; scarfSeen = true;
+      const svg = $('svg', fig); if (!svg) return;
+      const box = document.createElement('div'); box.style.cssText = 'position:relative;line-height:0';
+      svg.before(box); box.appendChild(svg);
+      const roll = document.createElement('div'); roll.className = 'scarf-roll'; roll.setAttribute('aria-hidden', 'true'); box.appendChild(roll);
+      const a = MO.play(roll, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(0)' }], { duration: 620, delay: 120, easing: 'cubic-bezier(.4,.1,.3,1)', fill: 'both' });
+      const rm = () => roll.remove(); if (a) a.finished.then(rm, rm); else rm();
+    });
     $$('figure.trace', root).forEach((fig) => {
       const svg = $('svg', fig);
       $$('.trn', svg).forEach((g) => { g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button'); g.setAttribute('aria-label', g.dataset.info); });

@@ -205,7 +205,6 @@ body:has(#screen-game:not([hidden])){overflow:hidden;overscroll-behavior:none}
 .vw-more{display:contents}
 .vm-doc:empty{display:none}
 .vb-more[hidden],#btn-vpeek[hidden]{display:none}
-.vb-slot{display:none}
 .fold-state{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .vw-bar .zcycle{min-width:56px;font-variant-numeric:tabular-nums}
 .vw-close{display:inline-flex;align-items:center;gap:.3em}
@@ -217,17 +216,10 @@ body:has(#screen-game:not([hidden])){overflow:hidden;overscroll-behavior:none}
   .vw-bar .zcycle{margin-left:0;min-width:50px;padding:0 .3em}
   .vw-bar .vb-pin{min-width:42px;padding:0}
   .vw-bar .vb-more{min-width:42px;padding:0}
-  .vb-slot{display:flex;flex:1 1 auto;min-width:0}
-  .vb-fold{display:flex;flex:1;min-width:0;margin:0;padding:0;border:0;background:none}
-  .vb-fold .fb-seg{display:flex;flex:1;min-width:0;margin:0;border:1px solid #888;border-radius:var(--r);overflow:hidden}
-  .vb-fold .seg{flex:1 1 auto;min-width:40px;min-height:42px;border:0;border-left:1px solid #666;background:#2f333a;color:#f1ede4;font:700 15px var(--sans);padding:0 .15em;white-space:nowrap;cursor:pointer;touch-action:manipulation}
-  .vb-fold .seg:first-child{border-left:0}
-  .vb-fold .seg[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
   /* 「…」の中（すかす・印を消す・図・ピン） */
   .vw-bar.menu-mode .vw-more{display:none;position:absolute;right:max(8px,var(--sar));bottom:calc(100% + 6px);z-index:5;flex-direction:column;align-items:stretch;gap:6px;width:min(300px,calc(100vw - 16px));max-height:min(62vh,calc(var(--app-h,100dvh) - 120px));overflow:auto;padding:8px;background:#23262c;border:1px solid #5f645f;border-radius:var(--r);box-shadow:3px 4px 0 rgba(0,0,0,.45)}
   .vw-bar.menu-mode .vw-more.open{display:flex}
   .vw-bar.menu-mode .vw-more .vb-btn{width:100%;justify-content:flex-start;gap:.5em;padding:0 .8em}
-  .vw-bar.menu-mode #btn-pin .vb-t{position:static;width:auto;height:auto;overflow:visible;clip:auto}
   .vm-fold{display:block;margin:0}
   .vm-fold .fb-row{display:flex;flex-direction:column;align-items:stretch;gap:6px}
   .vm-fold .tool,.vm-fold .tool.big{width:100%;min-height:44px;text-align:left;font-size:15px;padding:0 .8em;white-space:nowrap}
@@ -242,3 +234,70 @@ body:has(#screen-game:not([hidden])){overflow:hidden;overscroll-behavior:none}
   .pane-cap{margin-bottom:4px}
 }
 .svg-letter text,.fold-diagram text{font-variant-emoji:text}
+
+/* ===== v9.4 紙の動かし方は「紙のつまみ」の段に。下の道具の段とは分ける ===== */
+.vb-sp{flex:1 1 auto;min-width:0}
+.paper-row[hidden]{display:none}
+.paper-row{flex:none;display:flex;align-items:flex-start;min-height:0;height:44px;box-sizing:border-box;padding:0 max(8px,var(--sar)) 0 max(8px,var(--sal));background:#2a2d33;border-top:1px solid #45484e;position:relative;z-index:2}
+.paper-acts{display:flex;align-items:flex-start;gap:8px;width:100%;margin:0;padding:0;border:0;background:none;position:static}
+.paper-acts .fb-row,.paper-acts .fb-more{display:none}
+.paper-acts .fb-seg,.paper-dock .fb-seg{display:flex;flex:1 1 auto;gap:4px;min-width:0;margin:0;padding:0;border:0;border-radius:0;overflow:visible;background:none}
+/* つまみ：紙のはしから下にたれた、手で切った紙片 */
+.paper-acts .seg,.paper-dock .seg{position:relative;flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:5px;height:38px;min-height:38px;margin:0;padding:0 .4em;border:1px solid #9c9078;border-top:0;border-radius:0 0 7px 7px;background:#cfc5ad;color:#4a4334;font:700 15px var(--sans);white-space:nowrap;cursor:pointer;touch-action:manipulation;box-shadow:2px 2px 0 rgba(0,0,0,.35);transform-origin:50% 0;transition:transform .16s ease,background-color .16s ease}
+.paper-acts .seg[aria-pressed="true"],.paper-dock .seg[aria-pressed="true"]{background:#fbf5e6;color:#2b2416;height:42px;min-height:42px;border-color:#b9ae94;box-shadow:2px 3px 0 rgba(0,0,0,.4)}
+.paper-acts .seg[aria-pressed="true"]::after,.paper-dock .seg[aria-pressed="true"]::after{content:"";position:absolute;left:22%;right:22%;bottom:6px;height:2px;background:#c62828;border-radius:2px;transform:rotate(-1.2deg)}
+.paper-acts .seg:active,.paper-dock .seg:active{transform:translateY(2px)}
+.paper-acts .seg:focus-visible,.paper-dock .seg:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.pt-ic{display:inline-flex;flex:none}
+.pt-ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;overflow:visible}
+.pt-t{overflow:hidden;text-overflow:clip}
+/* すかす：紙を光にかざす小さな札 */
+.paper-acts .pa-see{flex:none;height:38px;min-height:38px;margin:0;padding:0 .7em;border:1px solid #6d675a;border-top:0;border-radius:0 0 7px 7px;background:#23262c;color:#e9e2d2;font:700 15px var(--sans);white-space:nowrap;box-shadow:2px 2px 0 rgba(0,0,0,.35)}
+.paper-acts .pa-see[aria-pressed="true"]{background:#f6e7b8;color:#2b2416;border-color:#b9ae94}
+.paper-acts .pa-see:disabled{opacity:.45}
+.paper-acts .pa-see[hidden]{display:none}
+@media (max-width:374px){.paper-acts .seg{gap:3px;padding:0 .2em;font-size:14px}.pt-ic svg{width:19px;height:19px}.paper-acts .pa-see{padding:0 .5em}}
+/* PC：手紙の下に同じつまみ */
+.paper-dock{background:#2a2d33;border-top:1px dashed #6d675a;padding:0 10px 6px}
+.paper-dock .fb-seg{margin:0 0 6px}
+.paper-dock .seg{height:40px;min-height:40px;font-size:.95rem}
+.paper-dock .seg[aria-pressed="true"]{height:44px;min-height:44px}
+/* 紙が動く絵（重ね絵）。見せるだけで、さわれない */
+.fold-stage{position:fixed;z-index:70;overflow:hidden;pointer-events:auto;contain:strict}
+.fs-bg{position:absolute;inset:0;background:#2a2d33;opacity:0}
+.fs-cam{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.fs-ghost{filter:none!important}
+.fs-ghost *{transition:none!important;animation:none!important}
+.fs-ghost.g-base .mir,.fs-ghost.g-base .state-note{display:none}
+.fs-ghost.g-top .desk,.fs-ghost.g-top .bottom,.fs-ghost.g-top .umarks,.fs-ghost.g-top .foldline,.fs-ghost.g-top .state-note{display:none}
+.fs-card{position:absolute;left:0;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;will-change:transform}
+.fs-card[hidden]{display:none}
+.fs-card.x{transform-origin:50% 100%}
+.fs-card.y{transform-origin:50% 50%}
+.fs-face{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.fs-card.x .fs-face.back{transform:rotateX(180deg)}
+.fs-card.y .fs-face.back{transform:rotateY(180deg)}
+.fs-sh{position:absolute;inset:0;background:#1d1a14;opacity:0;pointer-events:none}
+.fs-cut{position:absolute;left:0;right:0;height:0;border-top:3px dashed #c62828;transform:scaleX(0);transform-origin:0 50%;opacity:0}
+/* 章の札 */
+.ch-card{position:fixed;left:0;right:0;top:30%;z-index:80;display:flex;justify-content:center;pointer-events:none}
+.ch-in{min-width:min(300px,80vw);max-width:88vw;padding:14px 22px 12px;background:#fbf5e6;color:#2b2416;border:1px solid #b9ae94;border-radius:3px;box-shadow:4px 5px 0 rgba(0,0,0,.45);text-align:center;transform:rotate(-1deg)}
+.ch-no,.ch-t,.ch-s{display:block}
+.ch-no{font:700 13px var(--sans);letter-spacing:.2em;color:#c62828;border-bottom:1px solid #d8ccb0;padding-bottom:4px;margin-bottom:6px}
+.ch-t{font:700 22px var(--serif);line-height:1.35}
+.ch-s{font:14px var(--sans);color:#6a604c;margin-top:4px;line-height:1.5}
+/* 赤えんぴつ（まちがい） */
+.red-pencil{position:absolute;right:4px;top:50%;width:96px;height:24px;margin-top:-12px;pointer-events:none;overflow:visible}
+.red-pencil path{fill:none;stroke:#c62828;stroke-width:3;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1}
+.pz-fb-host{position:relative}
+/* S8 かけら：持ち上げた感じ（影はかたいまま） */
+.frag.sel{transform:translateY(-4px) rotate(-1deg);box-shadow:3px 5px 0 rgba(0,0,0,.4)}
+.frag{transition:transform .14s ease,box-shadow .14s ease}
+/* S9 マフラー：くるくる広げる */
+.scarf-roll{position:absolute;inset:0;background:#3a352d;transform-origin:50% 100%;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.paper-acts .seg,.paper-dock .seg,.frag{transition:none}.ch-card,.fold-stage,.scarf-roll{display:none}}
+body.reduce .ch-card,body.reduce .fold-stage,body.reduce .scarf-roll{display:none}
+.safelight{position:absolute;inset:0;pointer-events:none;background:radial-gradient(closest-side,rgba(255,120,60,.35),rgba(255,90,40,.12) 70%,transparent);mix-blend-mode:screen;opacity:0}
+.darkroom-in{position:fixed;z-index:65;pointer-events:none;background:radial-gradient(ellipse at 50% 30%,rgba(140,30,20,.55),#0d0807 75%)}
+body.reduce .darkroom-in,body.reduce .safelight{display:none}
+.fs-low{position:absolute;left:0;background:#2a2d33}
