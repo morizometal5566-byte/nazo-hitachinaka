@@ -2,28 +2,39 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<link rel="icon" href="data:,">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="description" content="古い写真館で、店主が死んだ。捜査から外された新米刑事から届いた、ロックのかかった資料。縦持ちで遊ぶ謎解き（全10話＋プロローグ）。">
 <meta name="theme-color" content="#2b2d2c">
-<title>十九年目のネガ ― ひたちなか・那珂湊の謎解き事件簿</title>
-<meta property="og:title" content="十九年目のネガ ― ひたちなか・那珂湊の謎解き事件簿">
-<meta property="og:description" content="雪の港町の写真館で、事件が起きた。残されたのは、一本のネガと、白い猫。スマホで遊べる謎解き。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="十九年目のネガ">
+<title>十九年目のネガ ― 那珂湊・潮見写真館殺人事件</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="十九年目のネガ ― 那珂湊・潮見写真館殺人事件">
+<meta property="og:description" content="古い写真館で、店主が死んだ。捜査から外された新米刑事から、ロックのかかった資料が届く。縦持ちで遊ぶ謎解き。">
 <meta property="og:image" content="https://morizometal5566-byte.github.io/nazo-hitachinaka/assets/img/ogp_1200x630.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDMincho&family=BIZ+UDPGothic:wght@400;700&family=Klee+One:wght@600&family=Shippori+Mincho+B1:wght@800&family=Zen+Maru+Gothic:wght@700&display=swap">
-<link rel="preload" as="image" href="assets/img/contact_sheet.jpg">
-<link rel="stylesheet" href="css/style.css?v=94">
-<link rel="stylesheet" href="css/theme.css?v=94">
+<meta name="twitter:image" content="https://morizometal5566-byte.github.io/nazo-hitachinaka/assets/img/ogp_1200x630.jpg">
+<script>(function(){var lz=0;window.N19_LAZY=function(){if(lz++)return;var l=document.createElement("link");l.rel="stylesheet";l.href="css/fonts.fb7e05091a.css";document.head.appendChild(l);};document.addEventListener("n19:ready",function(){if("serviceWorker"in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register("sw.js").catch(function(){});});})();</script>
+<link rel="preload" as="script" href="js/app.dbba088382.js" fetchpriority="high">
+<link rel="stylesheet" href="css/app.1d10b04edb.css">
+<meta property="og:url" content="https://morizometal5566-byte.github.io/nazo-hitachinaka/">
+<link rel="canonical" href="https://morizometal5566-byte.github.io/nazo-hitachinaka/">
 </head>
 <body data-font="m">
 <a class="skip" href="#puzzle">いまの謎へ移動</a>
 
 <!-- タイトル -->
+<script>(function(){var w=0,d=document.documentElement;function fit(){if(innerWidth===w)return;w=innerWidth;var p=document.createElement('div');p.style.cssText='position:absolute;visibility:hidden;width:0;height:100vh;height:100svh';document.body.appendChild(p);var h=Math.min(p.offsetHeight||innerHeight,innerHeight);p.remove();d.style.setProperty('--tvh',h/100+'px');d.classList.toggle('title-short',h<=700);}fit();addEventListener('resize',fit);})();</script>
 <section id="screen-title" class="screen" aria-labelledby="title-h">
   <div class="title-sheet" aria-hidden="true">
-    <img src="assets/img/contact_sheet.jpg" alt="" fetchpriority="high" width="1080" height="790">
+    <img data-src="assets/img/contact_sheet.webp" alt="" width="1080" height="790">
     <span class="sheet-tape"></span>
+    <span class="title-burn" id="title-burn" aria-hidden="true" hidden></span>
     <p class="title-case">1月15日　潮見写真館<br>ベタ焼き　No.7</p>
   </div>
   <div class="title-inner">
@@ -32,36 +43,43 @@
       <div class="title-side">
         <p class="title-kicker">那珂湊・潮見写真館殺人事件</p>
         <p class="title-lead">古い写真館で、店主が死んだ。第一発見者は、新米刑事・風見莉々香の姉。捜査から外された莉々香から、あなたにロックのかかった資料が届く。</p>
+        <div class="title-scarves" id="title-scarves" hidden></div>
         <div class="title-btns">
           <button type="button" id="btn-continue" class="btn primary" hidden>続きから</button>
-          <button type="button" id="btn-new" class="btn primary">はじめる</button>
+          <button type="button" id="btn-docs" class="btn primary" hidden>資料を読み返す</button>
+          <button type="button" id="btn-reread" class="btn ghost" hidden>記録を見る</button>
+          <button type="button" id="btn-new" class="btn primary" disabled aria-busy="true">読み込み中…</button>
           <button type="button" id="btn-new2" class="btn ghost" hidden>はじめから</button>
+          <button type="button" id="btn-sound" class="btn ghost" aria-pressed="true">音：あり（タップで切り替え）</button>
         </div>
       </div>
     </div>
     <img class="title-posi" src="assets/img/posi_line.svg" alt="" aria-hidden="true" width="120" height="120">
-    <p class="title-note">全11章（プロローグ＋S1〜S9＋大謎）・遊ぶ時間のめやす 約3時間20分（謎解きに慣れた人で2時間半〜3時間）。途中に動画パートと、暗室のミニゲームがあります。各章の謎は、資料を自分で読み解いて最後に1回で答える形です。途中でやめても自動で保存され、続きから遊べます。スマホを縦に持って、片手で遊べます。<br>暴力・死・家族の秘密の描写があります。大きな音や急な画像はありません。<a class="title-credit" href="credits.txt">写真・素材のクレジット</a></p>
+    <p class="title-note">全10話＋プロローグ。2時間ほど。自動で保存されます。</p>
+    <p class="title-note">縦に持って、片手で遊べます。暴力・死・家族の秘密を描く場面があります。<button type="button" id="btn-credits" class="title-credit" aria-haspopup="dialog">クレジットと注意</button></p>
   </div>
 </section>
 
 <!-- メイン画面（上：見出し／その下：物語・資料・謎。答えは謎のカードの中で） -->
 <section id="screen-game" class="screen app" hidden>
   <div class="col-main" id="col-main">
-    <header class="topbar">
-      <div class="tb-title"><span id="stage-label" class="tb-stage"></span><span id="objective-text" class="tb-obj"></span></div>
-      <div class="tb-act"><button type="button" id="btn-pinpeek" class="iconbtn tb-pin" hidden><span class="pin-ic" aria-hidden="true"></span><span id="btn-pinpeek-t"></span></button><button type="button" id="btn-menu" class="iconbtn" aria-haspopup="dialog" aria-label="メニュー（ヒント・メモ・前の資料・設定）"><span class="ic-menu" aria-hidden="true"><i></i><i></i><i></i></span><span id="menu-badge" class="menu-badge" aria-hidden="true"></span></button></div>
+    <header class="topbar" id="objective-bar">
+      <div class="tb-title"><span class="tb-row"><span id="stage-label" class="tb-stage"></span><span id="tb-prog" class="tb-prog"></span></span><span id="objective-text" class="tb-obj"></span></div>
+      <div class="tb-act"><button type="button" id="btn-pinpeek" class="iconbtn tb-pin" hidden><span class="pin-ic" aria-hidden="true"></span><span id="btn-pinpeek-t"></span></button><button type="button" id="btn-menu" class="iconbtn" aria-haspopup="dialog" aria-label="メニュー（付箋・メモ・前の資料・設定）"><span class="ic-menu" aria-hidden="true"><i></i><i></i><i></i></span></button></div>
     </header>
     <main class="scroll" id="scroll">
       <section class="feed" aria-label="莉々香からのメッセージ">
         <button type="button" id="btn-older" class="older" hidden></button>
         <ol id="feed-old" class="msgs" hidden></ol>
         <ol id="feed" class="msgs" aria-live="polite"></ol>
+        <button type="button" id="btn-skipall" class="skipall" hidden>スキップ</button>
       </section>
       <section class="cards-sec" aria-labelledby="cards-h">
-        <h2 id="cards-h" class="sr-only">資料 <span id="cards-count"></span></h2>
-        <ul id="cards" class="cards"></ul>
+        <div class="cards-hd"><h2 id="cards-h" class="cards-h">資料 <span id="cards-count"></span></h2><button type="button" class="btn sm ghost cards-all" data-act="allcards">資料を全部見る</button></div>
+        <ul id="cards" class="cards grid2"></ul>
       </section>
       <section id="puzzle" class="puzzle" tabindex="-1" aria-labelledby="pz-name"></section>
+      <div id="cards-old" class="cards-old"></div>
     </main>
   </div>
 
@@ -70,27 +88,36 @@
       <h2 id="vw-title" class="vw-title"></h2>
       <button type="button" id="btn-compare" class="btn ghost sm vw-compare" aria-pressed="false">並べて見る</button>
     </div>
+    <nav id="vw-tabs" class="vw-tabs" aria-label="この謎の資料（番号で切り替える）" hidden></nav>
+    <button type="button" id="btn-docback" class="docback" hidden></button>
+    <div id="pick-bar" class="pick-bar" role="status" hidden><p id="pk-msg" class="pk-msg"></p><div class="pk-act"><p id="pk-now" class="pk-now"></p><button type="button" id="pk-keep" class="btn sm primary pk-keep" hidden>これで決める</button><button type="button" id="pk-redo" class="btn sm ghost pk-redo" hidden>指し直す</button><button type="button" id="pk-end" class="btn sm ghost pk-end">やめる</button></div></div>
     <div id="panes" class="panes"></div>
     <div id="paper-row" class="paper-row" hidden></div>
+    <aside id="sheet" class="ans-sheet" role="region" aria-label="答えシート" data-sheet data-state="peek" hidden></aside>
     <div class="vw-bar">
       <button type="button" id="btn-viewer-close" class="vb-btn vw-close" aria-label="もどる（資料を閉じる）"><span class="ic-back" aria-hidden="true"></span><span class="vb-t">もどる</span></button>
-      <span class="vb-sp" aria-hidden="true"></span>
-      <button type="button" id="btn-pin" class="vb-btn vb-pin" aria-pressed="false"><span class="pin-ic" aria-hidden="true"></span><span class="vb-t" id="btn-pin-t">ピン</span></button>
-      <button type="button" id="btn-vpeek" class="vb-btn" hidden>⇄</button>
-      <div id="vw-more" class="vw-more" role="group" aria-label="紙のそのほかの道具">
+      <span class="vb-sp" aria-hidden="true"></span><span id="vb-name" class="vb-name"></span>
+      <button type="button" id="btn-sheet" class="vb-btn vb-goans" aria-expanded="false" aria-controls="sheet" hidden>答えシートを開く ▲</button>
+      <div class="zoom" role="group" aria-label="拡大と縮小"><button type="button" class="zbtn" data-z="-" aria-label="縮小">−</button><span class="zval" aria-live="polite">100%</span><button type="button" class="zbtn" data-z="+" aria-label="拡大">＋</button></div>
+      <div id="vw-more" class="vw-more" role="group" aria-label="そのほかの操作">
+        <button type="button" id="btn-pin" class="vb-btn vb-pin" aria-pressed="false"><span class="pin-ic" aria-hidden="true"></span><span class="vb-t" id="btn-pin-t">しおり</span></button>
+        <button type="button" id="btn-vpeek" class="vb-btn" hidden>⇄</button>
+        <button type="button" id="btn-zcycle" class="vb-btn zcycle" aria-label="資料の大きさ"><span class="zc-l">大きさ</span> <span class="zc-v">100%</span></button>
         <div id="vm-doc" class="vm-doc"></div>
       </div>
-      <button type="button" id="btn-goans" class="vb-btn vb-goans" hidden aria-label="資料を閉じて、答えの欄へ">答えへ</button>
-      <button type="button" id="btn-zcycle" class="vb-btn zcycle" aria-label="資料の大きさ（100%→85%→70%→全体）"><span class="zc-v">100%</span></button>
-      <button type="button" id="btn-more" class="vb-btn vb-more" aria-expanded="false" aria-controls="vw-more" aria-label="紙のそのほかの道具（図・印を消す）" hidden><span class="ic-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
-      <div class="zoom" role="group" aria-label="拡大と縮小"><button type="button" class="zbtn" data-z="-" aria-label="縮小">−</button><span class="zval" aria-live="polite">100%</span><button type="button" class="zbtn" data-z="+" aria-label="拡大">＋</button></div>
+      <button type="button" id="btn-more" class="vb-btn vb-more" aria-expanded="false" aria-controls="vw-more" aria-label="そのほか（しおり・大きさ・紙の道具）" hidden><span class="ic-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
     </div>
   </aside>
 </section>
 
 
+<div id="plate" class="plate" role="status" hidden></div>
+<div id="curtain" class="curtain" role="dialog" aria-modal="true" aria-label="解決" data-curtain hidden></div>
+<div id="endchoice" class="endchoice" role="dialog" aria-modal="true" aria-label="最後の選択" hidden></div>
+<div id="recard" class="recard" role="dialog" aria-modal="true" aria-labelledby="rc-h" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <button type="button" id="new-badge" class="new-badge" hidden>新しいメッセージ ↓</button>
+<button type="button" id="go-puzzle" class="go-puzzle" hidden>謎へ ▼</button>
 
 <!-- メニュー（ヒント・メモ・前の資料・設定を1つに） -->
 <dialog id="dlg-menu" class="sheet" aria-labelledby="menu-h">
@@ -99,13 +126,18 @@
     <button type="button" class="iconbtn" data-close aria-label="閉じる">✕</button>
   </div>
   <div class="tabs" role="tablist" aria-label="メニューの中身">
-    <button type="button" role="tab" id="mt-hint" aria-controls="mp-hint" data-tab="hint">ヒント</button>
+    <button type="button" role="tab" id="mt-hint" aria-controls="mp-hint" data-tab="hint">付箋</button>
+    <button type="button" role="tab" id="mt-record" aria-controls="mp-record" data-tab="record">記録</button>
     <button type="button" role="tab" id="mt-memo" aria-controls="mp-memo" data-tab="memo">メモ</button>
     <button type="button" role="tab" id="mt-archive" aria-controls="mp-archive" data-tab="archive">前の資料</button>
     <button type="button" role="tab" id="mt-settings" aria-controls="mp-settings" data-tab="settings">設定</button>
   </div>
   <div class="tabpanels">
     <section role="tabpanel" id="mp-hint" aria-labelledby="mt-hint"><div id="hint-box"></div></section>
+    <section role="tabpanel" id="mp-record" aria-labelledby="mt-record" hidden>
+      <div id="rec-grid"></div>
+      <div id="rec-info" class="rec-info" aria-live="polite"></div>
+    </section>
     <section role="tabpanel" id="mp-memo" aria-labelledby="mt-memo" hidden>
       <label for="memo" class="sr-only">メモ</label>
       <textarea id="memo" rows="8" placeholder="気づいたことを書いておけます（自動で保存）"></textarea>
@@ -121,10 +153,67 @@
       <label class="set-row"><input type="checkbox" id="set-contrast"> ハイコントラスト</label>
       <label class="set-row"><input type="checkbox" id="set-motion"> 動きを減らす</label>
       <label class="set-row"><input type="checkbox" id="set-cb"> 色を文字でも示す（色の見分けが苦手な方へ）</label>
-      <p class="set-help">拡大：指2本でピンチ／ダブルタップ／＋−ボタン。PCは Ctrl＋ホイール、＋−キー、0キーで100%。</p>
-      <button type="button" id="btn-reset" class="btn danger">最初からやり直す</button>
+      <label class="set-row"><input type="checkbox" id="set-vibe"> 振動（正解の幕・答えの送信のとき）</label>
+      <label class="set-row"><input type="checkbox" id="set-sound" checked> 音（紙・着信・判子・環境音）</label>
+      <label class="set-row"><input type="checkbox" id="set-tips"> 操作の案内を出さない</label>
+      <p class="set-help">二本指で広げると拡大できます。</p>
+      <button type="button" id="btn-code" class="btn ghost">セーブコードを出す・読み込む</button>
+      <button type="button" id="btn-old-clear" class="btn ghost" hidden>古い記録を消す</button>
+      <button type="button" id="btn-reset" class="btn danger">はじめからにする</button>
     </section>
   </div>
+</dialog>
+
+<dialog id="dlg-credits" class="sheet credits" aria-labelledby="cr-h">
+  <div class="sheet-head">
+    <h2 id="cr-h">クレジットと注意</h2>
+    <button type="button" class="iconbtn" data-close aria-label="閉じる">✕</button>
+  </div>
+  <div class="cr-body">
+    <h3>写真</h3>
+    <p>タイトルのベタ焼きは、Wikimedia Commons で CC0（パブリックドメイン提供）として公開されている写真を、切り抜き・トリミング・色調変更・合成して使っています。</p>
+    <ul>
+      <li>Snowy night in Noshiro（撮影：掬茶）</li>
+      <li>Level crossing in Ninose（撮影：Hahifuheho）</li>
+      <li>干し芋（撮影：Ocdp）</li>
+      <li>JR Iida line, Nakaizawa level crossing（撮影：先従隗始）</li>
+      <li>パラフィンの暗室ランプ（撮影：Daderot）</li>
+    </ul>
+    <h3>音</h3>
+    <p>効果音と海の波は、次の録音を切り出し・音量をそろえ・ループの継ぎ目を加工して mp3 にして使っています（出典の URL は配布の credits.txt に書いています）。</p>
+    <ul>
+      <li>紙をめくる音・章の札：「Turning a page」（作者：planish。パブリックドメイン）</li>
+      <li>シャッター（フィルム機）：「Holga shuttersound」（作者：Doitashimashite。パブリックドメイン）</li>
+      <li>正解の判子（木を叩く音）：「Door Knock」（作者：Joseph Sardin。CC0）</li>
+      <li>付箋をはがす紙・着信（紙の軽い音）：「Turned Page」（作者：DavidGreck。CC0）</li>
+      <li>暗室の水のしずく：「Drops of water #1」（作者：Joseph Sardin。CC0）</li>
+      <li>結末の海の波：「Sea: Waves」（作者：Joseph Sardin。CC0）</li>
+    </ul>
+    <p>音の出典：Wikimedia Commons・BigSoundBank（各音のページで権利表記を確認）。</p>
+    <h3>絵・字体</h3>
+    <p>本文中の写真の絵（資料の絵・捜査の記録の12コマ）、紙や粒子の質感、猫の線画は、作者がこのゲームのためにプログラムで組み立てた自作です。画像生成AIは使っていません。</p>
+    <p>字体は Google Fonts の Shippori Mincho B1、BIZ UDMincho、BIZ UDPGothic、Klee One を使っています（SIL Open Font License）。</p>
+    <h3>物語について</h3>
+    <p>那珂湊などの実在の地名が出てきますが、登場する人物・団体・店名・事件はすべて架空です。</p>
+    <h3>年齢の目安</h3>
+    <p>暴力・死・家族の秘密を描く場面があります。犬や猫が傷つく場面はありません。</p>
+    <h3>遊べる環境</h3>
+    <p>スマホ（縦持ち）・タブレット・PC の新しいブラウザ（Chrome・Safari・Edge）で遊べます。初回に読み込んだあとは、通信なしで遊べます（オフライン可）。</p>
+    <h3>セーブと消し方</h3>
+    <p>進みとメモは、この端末のブラウザに自動で保存されます。ほかの端末やブラウザとは共有されません。消すには、メニューの「設定」から「はじめからにする」を選びます（確認が出ます）。ブラウザのサイトデータを消すと、進みも消えます。</p>
+    <p>メニューの「セーブコード」をコピーしておくと、あとで読み込んで続きから遊べます。</p>
+    <h3>個人情報について</h3>
+    <p>名前・メールアドレス・位置情報などは集めません。遊びの記録を外へ送ることもありません。</p>
+    <h3>お問い合わせ</h3>
+    <p>（販売ページに記載）</p>
+  </div>
+</dialog>
+<dialog id="dlg-code" class="confirm" aria-labelledby="code-h">
+  <h2 id="code-h" class="sm">セーブコード</h2>
+  <p class="sm muted">コピーしておくと、あとで「読み込む」から続きを遊べます。</p>
+  <textarea id="code-text" rows="6" spellcheck="false" aria-label="セーブコード"></textarea>
+  <div class="cf-btns"><button type="button" id="code-copy" class="btn ghost">コピー</button><button type="button" id="code-load" class="btn ghost">読み込む</button><button type="button" id="code-close" class="btn primary">閉じる</button></div>
+  <p id="code-msg" class="sm" role="status"></p>
 </dialog>
 
 <dialog id="dlg-confirm" class="confirm" aria-labelledby="cf-msg">
@@ -132,16 +221,6 @@
   <div class="cf-btns"><button type="button" id="cf-no" class="btn ghost">やめておく</button><button type="button" id="cf-yes" class="btn primary">見る</button></div>
 </dialog>
 
-<script src="js/norm.js"></script>
-<script src="js/content.js"></script>
-<script src="js/content2.js"></script>
-<script src="js/content3.js"></script>
-<script src="js/content4.js"></script>
-<script src="js/answers.js"></script>
-<script src="js/motion.js?v=94"></script>
-<script src="js/tools.js?v=94"></script>
-<script src="assets/video/manifest.js"></script>
-<script src="js/play.js?v=94"></script>
-<script src="js/app.js?v=94"></script>
+<script src="js/app.dbba088382.js"></script>
 </body>
 </html>
